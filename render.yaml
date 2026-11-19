@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: license-reminder
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: DEMO_MODE
+        value: "true"
+      - key: TIMEZONE
+        value: "Asia/Kolkata"
+      - key: BUSINESS_NAME
+        value: "Aarav Technologies"
+      - key: WHATSAPP_API_VERSION
+        value: "v21.0"
+      - key: CUSTOMER_TEMPLATE_NAME
+        value: "license_expiry_reminder"
+      - key: CLIENT_TEMPLATE_NAME
+        value: "license_expiry_client_notification"
+      - key: TEMPLATE_LANGUAGE_CODE
+        value: "hi"
+      # Render dashboard me values daalna (secrets commit mat karo)
+      - key: CLIENT_WHATSAPP_NUMBER
+        sync: false
+      - key: WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      # Optional: Render Postgres / external DB ka connection string
+      - key: DATABASE_URL
+        sync: false
+
+    # Free plan me persistent disk nahi milta. Paid plan par SQLite persist
+    # karne ke liye ye block uncomment karo aur DATABASE_URL set karo:
+    # disk:
+    #   name: license-data
+    #   mountPath: /var/data
+    #   sizeGB: 1

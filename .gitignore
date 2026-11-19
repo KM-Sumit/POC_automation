@@ -1,0 +1,18 @@
+# Environment / secrets
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Local database and uploads
+license_reminder.db
+uploads/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

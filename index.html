@@ -1,0 +1,2428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>License Reminder</title>
+  <meta name="description" content="Manage customer licenses and automate WhatsApp expiry reminders." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #6D4AFF;
+      --purple-hover: #5B3BEB;
+      --purple-soft: #EFEBFF;
+      --purple-text: #5B3DF5;
+      --bg: #F7F7F8;
+      --card: #FFFFFF;
+      --border: #ECECEF;
+      --border-soft: #F1F1F4;
+      --text: #18181B;
+      --text-2: #3F3F46;
+      --muted: #71717A;
+      --muted-2: #9A9AA3;
+      --green: #15803D;
+      --green-bg: #E6F7EC;
+      --amber: #B45309;
+      --amber-bg: #FDF1DD;
+      --red: #C53030;
+      --red-bg: #FDE8E8;
+      --gray-bg: #F1F1F4;
+      --gray-text: #6B7280;
+      --sidebar-w: 230px;
+      --topbar-h: 72px;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow-md: 0 10px 40px rgba(17, 17, 26, .12);
+    }
+
+    html { font-size: 14px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    svg { display: block; }
+    .icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    .icon-sm { width: 15px; height: 15px; }
+    .icon-fill { fill: currentColor; stroke: none; }
+    button { font-family: inherit; }
+    a { color: inherit; }
+    input, select, textarea { font-family: inherit; }
+
+    /* ---------- Toast & loader ---------- */
+    #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast {
+      display: flex; align-items: center; gap: 10px; min-width: 260px; max-width: 380px;
+      padding: 12px 14px; border-radius: 10px; background: #1F1F23; color: #fff;
+      font-size: 12.5px; font-weight: 500; box-shadow: 0 12px 30px rgba(0,0,0,.22);
+      animation: toastIn .22s ease;
+    }
+    .toast > span:not(.toast-close) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .toast .toast-close { margin-left: auto; cursor: pointer; color: #A1A1AA; font-size: 13px; }
+    .toast.success { border-left: 3px solid #34D399; }
+    .toast.error { border-left: 3px solid #F87171; }
+    .toast.warning { border-left: 3px solid #FBBF24; }
+    .toast.info { border-left: 3px solid #818CF8; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+    #loader { position: fixed; inset: 0; background: rgba(255,255,255,.6); backdrop-filter: blur(1px); z-index: 8888; display: none; align-items: center; justify-content: center; }
+    #loader.active { display: flex; }
+    .spinner { width: 34px; height: 34px; border: 3px solid #E4E0FF; border-top-color: var(--purple); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- Sidebar ---------- */
+    .sidebar {
+      position: fixed; inset: 0 auto 0 0; width: var(--sidebar-w); background: #fff;
+      border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 50;
+    }
+    .brand { height: var(--topbar-h); display: flex; align-items: center; gap: 10px; padding: 0 24px; flex-shrink: 0; }
+    .brand-icon { width: 30px; height: 30px; border-radius: 8px; background: var(--purple); display: grid; place-items: center; color: #fff; }
+    .brand-icon .icon { width: 17px; height: 17px; stroke-width: 2.6; }
+    .brand-name { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+    .nav-wrap { flex: 1; padding: 10px 16px; overflow-y: auto; }
+    .nav-label { font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-2); padding: 8px 8px 12px; }
+    .nav-link {
+      display: flex; align-items: center; gap: 10px; width: 100%; height: 44px; padding: 0 10px;
+      border: 0; background: transparent; border-radius: 8px; color: #52525B; font-size: 13px;
+      font-weight: 500; cursor: pointer; text-align: left; margin-bottom: 2px; transition: background .15s, color .15s;
+    }
+    .nav-link .icon { width: 18px; height: 18px; color: #71717A; }
+    .nav-link:hover { background: #F7F7F8; }
+    .nav-link.active { background: var(--purple-soft); color: var(--purple-text); font-weight: 600; }
+    .nav-link.active .icon { color: var(--purple); }
+    .nav-link > span:not(.nav-badge) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nav-badge { margin-left: auto; flex-shrink: 0; background: var(--amber-bg); color: var(--amber); font-size: 10.5px; font-weight: 600; border-radius: 6px; padding: 2px 6px; }
+    .sidebar-bottom { padding: 0 16px 16px; margin-top: auto; }
+    .uptodate { background: #F5F5F7; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+    .uptodate-title { display: flex; gap: 8px; align-items: center; font-size: 12.5px; font-weight: 600; }
+    .uptodate-title .icon { width: 15px; height: 15px; color: var(--green); }
+    .uptodate-sub { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin-top: 4px; padding-left: 23px; }
+    .account-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 2px; border-top: 1px solid var(--border-soft); cursor: pointer; }
+    .account-name { font-size: 12.5px; font-weight: 600; }
+    .account-sub { font-size: 11px; color: var(--muted-2); margin-top: 2px; }
+    .account-row .icon { color: var(--muted-2); }
+    .logout { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12.5px; padding: 8px 2px; background: none; border: 0; cursor: pointer; }
+    .logout:hover { color: var(--text); }
+    .logout .icon { width: 16px; height: 16px; }
+
+    /* ---------- App shell ---------- */
+    .app { margin-left: var(--sidebar-w); min-height: 100vh; }
+    .topbar {
+      height: var(--topbar-h); background: #fff; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 24px; padding: 0 32px; position: sticky; top: 0; z-index: 40;
+    }
+    .topbar-title { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+    .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 18px; }
+    .search-box { position: relative; width: 310px; }
+    .search-box > .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: #A1A1AA; }
+    .search-box input { width: 100%; height: 38px; border: 1px solid var(--border-soft); background: #F7F7F8; border-radius: 8px; padding: 0 46px 0 36px; font-size: 12.5px; color: var(--text-2); outline: none; }
+    .search-box input::placeholder { color: #A1A1AA; }
+    .search-box input:focus { background: #fff; border-color: #D8CCFF; box-shadow: 0 0 0 3px #F0EBFF; }
+    .search-box kbd { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 10px; color: #A1A1AA; background: #fff; border: 1px solid #E7E7EA; border-radius: 4px; padding: 1px 5px; font-family: inherit; }
+    .icon-btn { width: 34px; height: 34px; border: 0; background: none; display: grid; place-items: center; color: #52525B; cursor: pointer; border-radius: 8px; position: relative; }
+    .icon-btn:hover { background: #F5F5F7; }
+    .bell-dot { position: absolute; top: 7px; right: 8px; width: 6px; height: 6px; background: var(--purple); border-radius: 50%; }
+    .admin-chip { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 4px 2px; }
+    .admin-chip .admin-name { font-size: 12px; font-weight: 600; }
+    .admin-chip .admin-role { font-size: 10.5px; color: var(--muted-2); margin-top: 1px; }
+    .admin-chip > .icon { color: var(--muted-2); }
+
+    /* ---------- Pages ---------- */
+    .page { display: none; padding: 32px; min-height: calc(100vh - var(--topbar-h)); }
+    .page.active { display: block; animation: fadeIn .18s ease; }
+    @keyframes fadeIn { from { opacity: .4; } to { opacity: 1; } }
+
+    .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+    .page-head h1 { font-size: 28px; font-weight: 700; letter-spacing: -.025em; line-height: 1.2; }
+    .page-head p { font-size: 13.5px; color: var(--muted); margin-top: 8px; }
+    .head-actions { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px;
+      padding: 0 16px; border-radius: 8px; font-size: 12.5px; font-weight: 600; border: 1px solid transparent;
+      cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s; color: var(--text-2);
+    }
+    .btn .icon { width: 15px; height: 15px; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary { background: var(--purple); color: #fff; }
+    .btn-primary:hover { background: var(--purple-hover); }
+    .btn-outline { background: #fff; border-color: #E7E7EA; }
+    .btn-outline:hover { background: #FAFAFB; }
+    .btn-sm { height: 34px; padding: 0 12px; font-size: 12px; }
+
+    .link { color: var(--purple-text); font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 0; }
+    .link:hover { text-decoration: underline; }
+    .link .icon { width: 14px; height: 14px; }
+    .link-danger { color: #DC4C4C; }
+    .link-danger:hover { text-decoration: underline; }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .card-title { font-size: 15.5px; font-weight: 600; letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .card-sub { font-size: 12px; color: var(--muted-2); margin-top: 6px; }
+    .card + .card { margin-top: 16px; }
+
+    .chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; line-height: 1; white-space: nowrap; }
+    .chip-green { background: var(--green-bg); color: var(--green); }
+    .chip-amber { background: var(--amber-bg); color: var(--amber); }
+    .chip-red { background: var(--red-bg); color: var(--red); }
+    .chip-gray { background: var(--gray-bg); color: var(--gray-text); }
+    .chip-purple { background: var(--purple-soft); color: var(--purple-text); }
+
+    /* ---------- Dashboard ---------- */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-bottom: 20px; }
+    .stat-card { position: relative; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .stat-label { font-size: 12.5px; color: var(--muted); }
+    .stat-value { font-size: 30px; font-weight: 700; letter-spacing: -.03em; margin-top: 12px; line-height: 1; }
+    .stat-value.green { color: #178A4C; }
+    .stat-value.purple { color: var(--purple); }
+    .stat-value.red { color: #D33A3A; }
+    .stat-foot { font-size: 11.5px; color: var(--muted-2); margin-top: 16px; }
+    .stat-icon { position: absolute; top: 18px; right: 18px; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; }
+    .stat-icon .icon { width: 16px; height: 16px; }
+    .stat-icon.purple { background: #F0EBFF; color: var(--purple); }
+    .stat-icon.green { background: #E6F7EC; color: #16A34A; }
+    .stat-icon.amber { background: #FDF1DD; color: #D18B1F; }
+    .stat-icon.red { background: #FDE8E8; color: #D64545; }
+
+    .banner { display: flex; align-items: center; gap: 14px; background: #F6F4FF; border: 1px solid #ECE8FF; border-radius: var(--radius); padding: 14px 18px; margin-bottom: 20px; }
+    .banner-icon { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: var(--purple); background: #fff; flex-shrink: 0; }
+    .banner-icon .icon { width: 15px; height: 15px; }
+    .banner-title { font-size: 12.5px; font-weight: 600; }
+    .banner-sub { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+    .banner > .chip { margin-left: auto; }
+
+    .table-card { padding: 0; overflow: hidden; }
+    .table-card .card-head { padding: 20px 20px 0; }
+    .table-wrap { overflow-x: auto; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table thead th {
+      background: #FAFAFB; color: #8A8A93; font-size: 10.5px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .05em; text-align: left; padding: 11px 16px; border-top: 1px solid var(--border-soft);
+      border-bottom: 1px solid var(--border-soft); white-space: nowrap;
+    }
+    .table tbody td { padding: 13px 16px; border-bottom: 1px solid #F3F3F5; font-size: 12.5px; vertical-align: middle; color: var(--text-2); }
+    .table tbody tr:last-child td { border-bottom: 0; }
+    .table tbody tr:hover { background: #FCFCFD; }
+    .table .row-failed { background: #FDF6F6; }
+    .table .row-failed:hover { background: #FDF1F1; }
+    .cell-title { font-size: 12.5px; font-weight: 600; color: #27272A; }
+    .cell-sub { font-size: 11px; color: var(--muted-2); margin-top: 3px; }
+    .cell-strong { font-size: 12.5px; font-weight: 500; color: #27272A; }
+    .td-right { text-align: right; }
+    .row-arrow { color: #B9B9C2; display: inline-flex; }
+    .row-arrow:hover { color: var(--purple); }
+    .empty { text-align: center; color: var(--muted-2); padding: 28px 16px !important; font-size: 12.5px; }
+
+    .dash-bottom { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; margin-top: 18px; }
+    .notif-row { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid #F3F3F5; }
+    .notif-row:last-child { border-bottom: 0; }
+    .notif-icon { width: 28px; height: 28px; border-radius: 50%; background: #F1FBF4; border: 1px solid #D9F2E1; display: grid; place-items: center; color: #1FA855; flex-shrink: 0; }
+    .notif-icon .icon { width: 14px; height: 14px; }
+    .notif-main { flex: 1; min-width: 0; }
+    .notif-name { font-size: 12.5px; font-weight: 600; }
+    .notif-sub { font-size: 11px; color: var(--muted-2); margin-top: 2px; }
+    .notif-time { font-size: 11.5px; color: var(--muted-2); white-space: nowrap; margin-right: 14px; }
+
+    .quick-item { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid #F3F3F5; cursor: pointer; background: none; border-left: 0; border-right: 0; border-top: 0; width: 100%; text-align: left; }
+    .quick-item:last-child { border-bottom: 0; }
+    .quick-item:hover .quick-title { color: var(--purple-text); }
+    .quick-icon { width: 20px; color: var(--purple); display: grid; place-items: center; flex-shrink: 0; }
+    .quick-icon .icon { width: 17px; height: 17px; }
+    .quick-title { font-size: 12.5px; font-weight: 600; color: var(--text); }
+    .quick-sub { font-size: 11px; color: var(--muted-2); margin-top: 2px; }
+    .quick-arrow { margin-left: auto; color: #C4C4CC; }
+    .quick-arrow .icon { width: 16px; height: 16px; }
+
+    .page-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 14px; font-size: 11px; color: var(--muted-2); }
+
+    /* ---------- Tabs & toolbars ---------- */
+    .tabs { display: flex; gap: 26px; border-bottom: 1px solid var(--border-soft); padding: 0 4px; }
+    .tab { background: none; border: 0; padding: 15px 2px 13px; font-size: 12.5px; font-weight: 500; color: var(--muted); cursor: pointer; position: relative; white-space: nowrap; }
+    .tab.active { color: var(--text); font-weight: 600; }
+    .tab.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--purple); border-radius: 2px; }
+    .tab .count { color: var(--muted-2); font-weight: 500; margin-left: 6px; }
+    .tab-body { padding: 16px 20px 20px; }
+
+    .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    .toolbar .spacer { flex: 1; }
+    .input {
+      height: 40px; border: 1px solid #E7E7EA; border-radius: 8px; background: #fff; padding: 0 14px;
+      font-size: 12.5px; outline: none; color: var(--text-2); width: 100%;
+    }
+    .input::placeholder { color: #A1A1AA; }
+    .input:focus { border-color: #C7B8FF; box-shadow: 0 0 0 3px #F0EBFF; }
+    .search-input { position: relative; }
+    .search-input > .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: #A1A1AA; }
+    .search-input .input { padding-left: 34px; }
+    .select-wrap { position: relative; }
+    .select-wrap > .icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 13px; height: 13px; color: #8A8A93; pointer-events: none; }
+    select.input { appearance: none; padding-right: 34px; cursor: pointer; }
+    .w-search { width: 320px; }
+    .w-filter { width: 176px; }
+    .w-sort { width: 156px; }
+
+    .pager { display: flex; align-items: center; gap: 8px; }
+    .page-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; background: #fff; border: 1px solid #E7E7EA; border-radius: 7px; font-size: 11.5px; font-weight: 500; color: var(--text-2); cursor: pointer; }
+    .page-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .page-btn:not(:disabled):hover { background: #FAFAFB; }
+    .page-num { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 7px; border: 1px solid #E7E7EA; background: #fff; font-size: 11.5px; font-weight: 500; cursor: pointer; color: var(--text-2); }
+    .page-num.active { background: var(--purple); border-color: var(--purple); color: #fff; font-weight: 600; }
+
+    /* ---------- Forms ---------- */
+    .form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 20px; }
+    .form-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label { font-size: 12px; font-weight: 600; color: var(--text-2); }
+    .form-group .input { height: 44px; }
+    .form-group textarea.input { height: auto; min-height: 78px; padding: 12px 14px; resize: vertical; }
+    .form-note { font-size: 11px; color: var(--muted-2); }
+    .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .form-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 18px; }
+    input[type="date"].input { color: var(--text-2); }
+    input[type="date"].input::-webkit-calendar-picker-indicator { opacity: .55; cursor: pointer; }
+
+    .checkbox-row { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+    .checkbox-row input { width: 15px; height: 15px; accent-color: var(--purple); margin-top: 2px; }
+    .checkbox-row .cb-title { font-size: 12.5px; font-weight: 600; }
+    .checkbox-row .cb-sub { display: block; font-size: 11px; color: var(--muted-2); margin-top: 2px; }
+
+    /* ---------- Import ---------- */
+    .steps { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 16px; }
+    .step { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .step-circle { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 600; background: var(--gray-bg); color: #8A8A93; flex-shrink: 0; }
+    .step.done .step-circle { background: var(--green-bg); color: #16A34A; }
+    .step.current .step-circle { background: var(--purple-soft); color: var(--purple); }
+    .step-title { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+    .step-sub { font-size: 11px; color: var(--muted-2); margin-top: 2px; }
+    .step-arrow { color: #C4C4CC; margin: 0 6px; }
+    .step-arrow .icon { width: 16px; height: 16px; }
+
+    .upload-box { border: 1px dashed #DCDCE2; background: #fff; border-radius: var(--radius); padding: 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; }
+    .upload-box.drag-over { border-color: var(--purple); background: #FBFAFF; }
+    .file-badge { width: 42px; height: 42px; border-radius: 8px; background: #E8F7EC; color: #16A34A; display: grid; place-items: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+    .file-main { flex: 1; min-width: 0; }
+    .file-name { font-size: 12.5px; font-weight: 600; }
+    .file-meta { font-size: 11px; color: var(--muted-2); margin-top: 3px; }
+    .upload-copy { flex: 1; font-size: 12.5px; color: var(--muted); }
+    .upload-copy .link { font-size: 12.5px; }
+    .upload-hint { font-size: 11px; color: var(--muted-2); margin-top: 5px; }
+
+    .map-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
+    .map-grid .form-group .input { height: 42px; }
+    .info-line { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted-2); margin-top: 16px; }
+    .info-line .icon { width: 13px; height: 13px; }
+
+    .preview-chips { display: flex; gap: 8px; }
+    .preview-table { margin-top: 16px; border: 1px solid var(--border-soft); border-radius: 8px; overflow: hidden; }
+    .preview-table .table thead th { border-top: 0; }
+    .error-row td { background: #FDF6F6; }
+    .error-text { color: #C53030; font-weight: 500; }
+    .preview-note { display: flex; align-items: flex-start; gap: 8px; background: #FDF6F6; border-radius: 7px; color: #B23A3A; font-size: 11.5px; padding: 10px 12px; margin-top: 10px; }
+    .preview-note .icon { width: 14px; height: 14px; margin-top: 1px; }
+    .import-foot { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 18px; }
+    .import-foot .hint { font-size: 11.5px; color: var(--muted-2); }
+    .result-banner { display: flex; align-items: center; gap: 12px; background: #F1FBF4; border: 1px solid #D9F2E1; color: #15803D; border-radius: var(--radius); padding: 16px 18px; margin-top: 16px; font-size: 12.5px; font-weight: 500; }
+    .result-banner .icon { color: #16A34A; }
+
+    /* ---------- Upcoming ---------- */
+    .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-bottom: 20px; }
+    .summary-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+    .summary-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--muted); }
+    .summary-line { display: flex; align-items: center; gap: 14px; margin-top: 10px; }
+    .summary-value { font-size: 30px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+    .summary-date { font-size: 12px; color: var(--muted); }
+    .summary-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .date-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; background: #fff; border: 1px solid #E7E7EA; border-radius: 8px; font-size: 12.5px; color: var(--text-2); cursor: pointer; }
+    .date-btn .icon { width: 13px; height: 13px; color: #8A8A93; }
+    .automation-card { display: flex; align-items: center; gap: 18px; margin-top: 16px; }
+    .automation-main { flex: 1; }
+    .automation-title { font-size: 14px; font-weight: 600; }
+    .automation-sub { font-size: 12px; color: var(--muted-2); margin-top: 5px; }
+    .page-note { font-size: 11px; color: var(--muted-2); margin-top: 14px; }
+
+    /* ---------- Notifications ---------- */
+    .detail-card { margin-top: 16px; }
+    .detail-head { display: flex; align-items: center; gap: 12px; }
+    .detail-title { font-size: 14px; font-weight: 600; }
+    .detail-meta { font-size: 11.5px; color: var(--muted-2); margin-top: 10px; }
+    .detail-body { display: flex; gap: 24px; margin-top: 16px; }
+    .detail-left { flex: 1; }
+    .detail-actions { width: 190px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+    .error-box { background: #FDF0F0; border-radius: 8px; padding: 13px 14px; color: #B23A3A; font-size: 12px; line-height: 1.55; }
+    .error-box strong { display: block; font-weight: 600; margin-bottom: 3px; }
+    .detail-note { font-size: 11px; color: var(--muted-2); margin-top: 16px; }
+
+    /* ---------- Settings ---------- */
+    .settings-grid { display: grid; grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+    .settings-left { display: flex; flex-direction: column; gap: 16px; }
+    .settings-right { display: flex; flex-direction: column; gap: 16px; }
+    .settings-card + .settings-card { margin-top: 0; }
+    .settings-card h3 { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+    .settings-card .sub { font-size: 12px; color: var(--muted-2); margin-top: 6px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+    .field-col { display: flex; flex-direction: column; gap: 8px; }
+    .field-col label { font-size: 12px; font-weight: 600; color: var(--text-2); }
+    .field-col .input { height: 42px; }
+    .field-col .hint { font-size: 11px; color: var(--muted-2); }
+    .settings-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 20px; }
+    .settings-row .label { font-size: 12.5px; font-weight: 600; }
+    .settings-row .hint { font-size: 11.5px; color: var(--muted-2); margin-top: 4px; }
+    .mono { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12.5px; }
+    .divider { height: 1px; background: var(--border-soft); margin: 16px 0; }
+    .inline-note { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted-2); margin-top: 6px; }
+
+    .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #E1E1E6; border-radius: 99px; transition: .2s; }
+    .slider::before { content: ''; position: absolute; height: 18px; width: 18px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+    .switch input:checked + .slider { background: var(--purple); }
+    .switch input:checked + .slider::before { transform: translateX(18px); }
+
+    .bubble { background: #EAF7EE; border-radius: 8px; padding: 14px; font-size: 12px; line-height: 1.65; color: #2F3B33; white-space: pre-line; }
+    .bubble-meta { display: flex; justify-content: flex-end; align-items: center; gap: 4px; color: #8FA695; font-size: 10px; margin-top: 8px; }
+    .preview-label { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; color: var(--muted-2); text-transform: uppercase; margin: 16px 0 8px; }
+    .template-note { font-size: 11px; color: var(--muted-2); margin-top: 10px; }
+    .template-note b { color: #15803D; font-weight: 600; }
+    .secret-note { font-size: 11px; color: var(--muted-2); margin-top: 18px; }
+
+    /* ---------- Modals ---------- */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(24,24,27,.42); z-index: 9000; display: none; align-items: flex-start; justify-content: center; padding: 60px 24px; overflow-y: auto; }
+    .modal-backdrop.active { display: flex; }
+    .modal { width: 620px; max-width: 100%; background: #fff; border-radius: 14px; box-shadow: var(--shadow-md); animation: modalIn .18s ease; }
+    .modal-sm { width: 420px; }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(-8px) scale(.99); } to { opacity: 1; transform: none; } }
+    .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 24px 0; }
+    .modal-head h3 { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+    .modal-head p { font-size: 12px; color: var(--muted-2); margin-top: 5px; }
+    .modal-close { width: 30px; height: 30px; border: 0; background: #F5F5F7; border-radius: 7px; display: grid; place-items: center; cursor: pointer; color: var(--muted); }
+    .modal-close:hover { background: #ECECEF; color: var(--text); }
+    .modal-body { padding: 20px 24px 24px; }
+    .modal-body .form-grid { gap: 16px; }
+    .modal-body .form-grid.two { grid-template-columns: 1fr 1fr; }
+    .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 0 24px 24px; }
+    .delete-name { font-weight: 600; color: var(--text); }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 1220px) {
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .settings-grid { grid-template-columns: 1fr; }
+      .dash-bottom { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .map-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 980px) {
+      :root { --sidebar-w: 0px; }
+      .sidebar { display: none; }
+      .page { padding: 24px; }
+      .topbar { padding: 0 24px; }
+      .search-box { width: 220px; }
+    }
+    @media (max-width: 720px) {
+      .page-head { flex-direction: column; }
+      .head-actions { width: 100%; }
+      .stats-grid, .summary-grid { grid-template-columns: 1fr; }
+      .form-grid, .form-grid.two, .map-grid, .field-row { grid-template-columns: 1fr; }
+      .topbar .search-box { display: none; }
+      .toolbar .w-search { width: 100%; }
+      .detail-body { flex-direction: column; }
+      .detail-actions { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+<!-- ================= ICON SPRITE ================= -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 6.8"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.5-3 2.8-4.6 5.5-4.6s5 1.6 5.5 4.6"/><path d="M16 5.5a3 3 0 0 1 0 5.8"/><path d="M17.5 14.6c2 .5 3.2 2.1 3.5 4.4"/></symbol>
+    <symbol id="i-file-down" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 12v5"/><path d="M9.8 14.8L12 17l2.2-2.2"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 6-2 7-2 7h16s-2-1-2-7"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.2-3.2"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M4 12h16"/><path d="M14 6l6 6-6 6"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9L2.2 18a2 2 0 0 0 1.7 3h16.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.2l2.4 2.4 4.6-4.8"/></symbol>
+    <symbol id="i-whatsapp" viewBox="0 0 24 24"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 .1 5.3.1 11.9c0 2.1.5 4.1 1.6 5.9L0 24l6.3-1.6a11.9 11.9 0 0 0 5.7 1.5h.1c6.6 0 11.9-5.3 11.9-11.9 0-3.2-1.2-6.2-3.5-8.5zM12 21.5c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7.9 1-3.6-.3-.4a9.5 9.5 0 0 1-1.5-5.1C2.1 6.6 6.6 2.1 12 2.1c2.6 0 5 1 6.8 2.9a9.5 9.5 0 0 1 2.8 6.8c0 5.4-4.4 9.7-9.6 9.7zm5.3-7.1c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.2-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.4.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.5-.3z"/></symbol>
+  </defs>
+</svg>
+
+<div id="toast-container"></div>
+<div id="loader"><div class="spinner"></div></div>
+
+<!-- ================= SIDEBAR ================= -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon"><svg class="icon"><use href="#i-check"/></svg></div>
+    <div class="brand-name">License Reminder</div>
+  </div>
+  <div class="nav-wrap">
+    <div class="nav-label">Workspace</div>
+    <button class="nav-link active" data-page="dashboard" onclick="navigate('dashboard')">
+      <svg class="icon"><use href="#i-grid"/></svg><span>Dashboard</span>
+    </button>
+    <button class="nav-link" data-page="customers" onclick="navigate('customers')">
+      <svg class="icon"><use href="#i-users"/></svg><span>Customers</span>
+    </button>
+    <button class="nav-link" data-page="import" onclick="navigate('import')">
+      <svg class="icon"><use href="#i-file-down"/></svg><span>Import Excel</span>
+    </button>
+    <button class="nav-link" data-page="upcoming" onclick="navigate('upcoming')">
+      <svg class="icon"><use href="#i-calendar"/></svg><span>Upcoming Expiries</span>
+      <span class="nav-badge" id="side-upcoming-badge">0</span>
+    </button>
+    <button class="nav-link" data-page="notifications" onclick="navigate('notifications')">
+      <svg class="icon"><use href="#i-bell"/></svg><span>Notifications</span>
+    </button>
+    <button class="nav-link" data-page="settings" onclick="navigate('settings')">
+      <svg class="icon"><use href="#i-settings"/></svg><span>Settings</span>
+    </button>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="uptodate">
+      <div class="uptodate-title"><svg class="icon"><use href="#i-check-circle"/></svg><span>You're up to date</span></div>
+      <div class="uptodate-sub"><span id="side-next-check">Next check today, 9:00 AM</span><br><span id="side-tz">Asia/Kolkata</span></div>
+    </div>
+    <div class="account-row" onclick="navigate('settings')">
+      <div>
+        <div class="account-name">Admin</div>
+        <div class="account-sub" id="side-business">Aarav Technologies</div>
+      </div>
+      <svg class="icon" style="width:14px;height:14px"><use href="#i-chevron"/></svg>
+    </div>
+    <button class="logout" onclick="logout()"><svg class="icon"><use href="#i-logout"/></svg>Log out</button>
+  </div>
+</aside>
+
+<!-- ================= APP ================= -->
+<div class="app">
+  <header class="topbar">
+    <div class="topbar-title" id="page-title">Dashboard</div>
+    <div class="topbar-actions">
+      <div class="search-box">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input id="global-search" type="text" placeholder="Search customers, licenses..." onkeydown="globalSearchKey(event)" />
+        <kbd>⌘ K</kbd>
+      </div>
+      <button class="icon-btn" onclick="navigate('notifications')" aria-label="Notifications">
+        <svg class="icon" style="width:18px;height:18px"><use href="#i-bell"/></svg>
+        <span class="bell-dot" id="bell-dot"></span>
+      </button>
+      <div class="admin-chip" onclick="navigate('settings')">
+        <div>
+          <div class="admin-name">Admin</div>
+          <div class="admin-role">Business owner</div>
+        </div>
+        <svg class="icon" style="width:14px;height:14px"><use href="#i-chevron"/></svg>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= DASHBOARD ================= -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-head">
+        <div>
+          <h1 id="dash-greeting">Good morning, Admin</h1>
+          <p>Manage your customers and license expiry reminders.</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-outline" onclick="navigate('import')"><svg class="icon"><use href="#i-download"/></svg>Import Excel</button>
+          <button class="btn btn-primary" onclick="navigate('customers', {focusAdd:true})"><svg class="icon"><use href="#i-plus"/></svg>Add customer</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Customers</div>
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-foot">Across all imported records</div>
+          <div class="stat-icon purple"><svg class="icon"><use href="#i-users"/></svg></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Active Licenses</div>
+          <div class="stat-value" id="stat-active">0</div>
+          <div class="stat-foot" id="stat-active-foot">0% of all licenses</div>
+          <div class="stat-icon green"><svg class="icon"><use href="#i-shield"/></svg></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Expiring Soon</div>
+          <div class="stat-value" id="stat-upcoming">0</div>
+          <div class="stat-foot" id="stat-upcoming-foot">Within the next 2 days</div>
+          <div class="stat-icon amber"><svg class="icon"><use href="#i-clock"/></svg></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Expired Licenses</div>
+          <div class="stat-value" id="stat-expired">0</div>
+          <div class="stat-foot">Need your attention</div>
+          <div class="stat-icon red"><svg class="icon"><use href="#i-alert"/></svg></div>
+        </div>
+      </div>
+
+      <div class="banner">
+        <div class="banner-icon"><svg class="icon"><use href="#i-bell"/></svg></div>
+        <div>
+          <div class="banner-title">Reminders are on autopilot</div>
+          <div class="banner-sub">Customers and your business receive a WhatsApp reminder exactly <span id="banner-days">2 days</span> before expiry.</div>
+        </div>
+        <span class="chip chip-green" id="automation-chip">Automation active</span>
+      </div>
+
+      <div class="card table-card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Upcoming expiries <span class="chip chip-amber" id="dash-upcoming-chip">0 licenses</span></div>
+            <div class="card-sub">Licenses that need attention in the next <span class="days-text">2</span> days.</div>
+          </div>
+          <button class="link" onclick="navigate('upcoming')">View all expiries <svg class="icon"><use href="#i-arrow-right"/></svg></button>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>CUSTOMER</th><th>LICENSE</th><th>EXPIRY DATE</th><th>STATUS</th><th>REMINDER</th><th style="width:48px"></th></tr></thead>
+            <tbody id="dash-expiring-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="dash-bottom">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Recent WhatsApp notifications</div>
+            <button class="link" onclick="navigate('notifications')">View history <svg class="icon"><use href="#i-arrow-right"/></svg></button>
+          </div>
+          <div id="dash-notif-list" style="margin-top:8px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="font-size:16px">Quick actions</div>
+          <div style="margin-top:10px">
+            <button class="quick-item" onclick="navigate('customers', {focusAdd:true})">
+              <div class="quick-icon"><svg class="icon"><use href="#i-plus"/></svg></div>
+              <div><div class="quick-title">Add a customer</div><div class="quick-sub">Enter customer and license details</div></div>
+              <div class="quick-arrow"><svg class="icon"><use href="#i-arrow-right"/></svg></div>
+            </button>
+            <button class="quick-item" onclick="navigate('import')">
+              <div class="quick-icon"><svg class="icon"><use href="#i-upload"/></svg></div>
+              <div><div class="quick-title">Import your customers</div><div class="quick-sub">Upload an Excel or CSV file</div></div>
+              <div class="quick-arrow"><svg class="icon"><use href="#i-arrow-right"/></svg></div>
+            </button>
+            <button class="quick-item" onclick="navigate('settings')">
+              <div class="quick-icon"><svg class="icon"><use href="#i-check-circle"/></svg></div>
+              <div><div class="quick-title">Notification settings</div><div class="quick-sub">Manage WhatsApp and reminders</div></div>
+              <div class="quick-arrow"><svg class="icon"><use href="#i-arrow-right"/></svg></div>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="page-footer"><span id="dash-sync">Last synced just now</span><span>All times are shown in <span id="dash-tz-text">Asia/Kolkata</span></span></div>
+    </section>
+
+    <!-- ================= CUSTOMERS ================= -->
+    <section class="page" id="page-customers">
+      <div class="page-head">
+        <div>
+          <h1>Customers</h1>
+          <p>A single place for every customer and license.</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-outline" onclick="navigate('import')"><svg class="icon"><use href="#i-download"/></svg>Import Excel</button>
+        </div>
+      </div>
+
+      <div class="card table-card">
+        <div class="tabs">
+          <button class="tab active" data-status="" onclick="setCustomerTab('', this)">All customers <span class="count" id="cust-count-all">0</span></button>
+          <button class="tab" data-status="active" onclick="setCustomerTab('active', this)">Active</button>
+          <button class="tab" data-status="expiring_soon" onclick="setCustomerTab('expiring_soon', this)">Expiring soon</button>
+          <button class="tab" data-status="expired" onclick="setCustomerTab('expired', this)">Expired</button>
+        </div>
+        <div class="tab-body">
+          <div class="toolbar">
+            <div class="search-input w-search">
+              <svg class="icon"><use href="#i-search"/></svg>
+              <input class="input" id="cust-search" type="text" placeholder="Search by name, mobile or license..." oninput="onCustomerSearch()" />
+            </div>
+            <div class="spacer"></div>
+            <div class="select-wrap">
+              <select class="input w-filter" id="cust-type" onchange="loadCustomers()">
+                <option value="">All license types</option>
+                <option value="with">With license number</option>
+                <option value="without">Without license number</option>
+              </select>
+              <svg class="icon"><use href="#i-chevron"/></svg>
+            </div>
+            <div class="select-wrap">
+              <select class="input w-sort" id="cust-sort" onchange="loadCustomers()">
+                <option value="latest">Sort: Latest</option>
+                <option value="expiry">Sort: Expiry</option>
+                <option value="name">Sort: Name</option>
+              </select>
+              <svg class="icon"><use href="#i-chevron"/></svg>
+            </div>
+          </div>
+
+          <div class="table-wrap" style="margin:0 -20px">
+            <table class="table">
+              <thead><tr>
+                <th style="width:40px"><input type="checkbox" id="cust-check-all" onclick="toggleAllCustomers(this)" style="accent-color:#6D4AFF"></th>
+                <th>CUSTOMER</th><th>LICENSE</th><th>EXPIRY DATE</th><th>STATUS</th><th>ACTIONS</th>
+              </tr></thead>
+              <tbody id="customers-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="toolbar" style="margin:16px 0 0">
+            <div class="hint" style="font-size:11.5px;color:var(--muted-2)" id="cust-range">Showing 0 of 0 customers</div>
+            <div class="spacer"></div>
+            <div class="pager" id="cust-pager"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <div class="card-title" style="font-size:18px">Add a customer</div>
+        <div class="card-sub">Create a record manually. Fields marked * are required.</div>
+        <form id="add-customer-form" onsubmit="submitCustomer(event)" style="margin-top:18px">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Customer name *</label>
+              <input class="input" type="text" id="new-name" required placeholder="e.g. Rahul Sharma" />
+            </div>
+            <div class="form-group">
+              <label>Mobile number *</label>
+              <input class="input" type="tel" id="new-mobile" required placeholder="+91 98765 43210" />
+            </div>
+            <div class="form-group">
+              <label>License number</label>
+              <input class="input" type="text" id="new-license" placeholder="e.g. LIC-2026-1043" />
+            </div>
+            <div class="form-group">
+              <label>License issue date</label>
+              <input class="input" type="date" id="new-issue" lang="en-GB" />
+            </div>
+            <div class="form-group">
+              <label>License expiry date *</label>
+              <input class="input" type="date" id="new-expiry" lang="en-GB" required />
+            </div>
+            <div class="form-group">
+              <label>Additional details</label>
+              <input class="input" type="text" id="new-notes" placeholder="Company, product or customer notes" />
+            </div>
+          </div>
+          <div class="form-footer">
+            <div class="form-note">Numbers must include the country code.</div>
+            <div class="form-actions" style="margin:0">
+              <button type="button" class="btn btn-outline" onclick="clearCustomerForm()">Clear</button>
+              <button type="submit" class="btn btn-primary"><svg class="icon"><use href="#i-plus"/></svg>Save customer</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+    <!-- ================= IMPORT ================= -->
+    <section class="page" id="page-import">
+      <div class="page-head">
+        <div>
+          <h1>Import customers</h1>
+          <p>Bring your customer records with you. No template required.</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-outline" onclick="downloadSampleFile()"><svg class="icon"><use href="#i-download"/></svg>Sample file</button>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step current" id="import-step-1">
+          <div class="step-circle" id="import-step-1-circle">1</div>
+          <div><div class="step-title">Upload file</div><div class="step-sub" id="import-step-1-sub">Current step</div></div>
+        </div>
+        <div class="step-arrow"><svg class="icon"><use href="#i-arrow-right"/></svg></div>
+        <div class="step" id="import-step-2">
+          <div class="step-circle" id="import-step-2-circle">2</div>
+          <div><div class="step-title">Map &amp; preview</div><div class="step-sub" id="import-step-2-sub">Next</div></div>
+        </div>
+        <div class="step-arrow"><svg class="icon"><use href="#i-arrow-right"/></svg></div>
+        <div class="step" id="import-step-3">
+          <div class="step-circle" id="import-step-3-circle">3</div>
+          <div><div class="step-title">Import customers</div><div class="step-sub" id="import-step-3-sub">Next</div></div>
+        </div>
+      </div>
+
+      <div class="upload-box" id="upload-box" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onFileDrop(event)">
+        <input type="file" id="file-input" accept=".xlsx,.xls,.csv" hidden onchange="onFileSelect(event)" />
+        <div class="upload-empty" id="upload-empty" style="display:flex;align-items:center;gap:16px;width:100%">
+          <div class="file-badge"><svg class="icon" style="width:18px;height:18px"><use href="#i-upload"/></svg></div>
+          <div class="upload-copy">
+            <div><b>Drag &amp; drop your file here,</b> or <button type="button" class="link" onclick="document.getElementById('file-input').click()">browse files</button></div>
+            <div class="upload-hint">.xlsx, .xls or .csv · Maximum file size: 10 MB</div>
+          </div>
+        </div>
+        <div id="upload-file" style="display:none;align-items:center;gap:16px;width:100%"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="font-size:16px">Match your columns</div>
+        <div class="card-sub">Tell us which columns to use for reminders.</div>
+        <div class="map-grid">
+          <div class="form-group">
+            <label>Customer name *</label>
+            <div class="select-wrap"><select class="input" id="map-name" onchange="previewImportDebounced()"></select><svg class="icon"><use href="#i-chevron"/></svg></div>
+          </div>
+          <div class="form-group">
+            <label>Mobile number *</label>
+            <div class="select-wrap"><select class="input" id="map-mobile" onchange="previewImportDebounced()"></select><svg class="icon"><use href="#i-chevron"/></svg></div>
+          </div>
+          <div class="form-group">
+            <label>License number *</label>
+            <div class="select-wrap"><select class="input" id="map-license" onchange="previewImportDebounced()"></select><svg class="icon"><use href="#i-chevron"/></svg></div>
+          </div>
+          <div class="form-group">
+            <label>Expiry date *</label>
+            <div class="select-wrap"><select class="input" id="map-expiry" onchange="previewImportDebounced()"></select><svg class="icon"><use href="#i-chevron"/></svg></div>
+          </div>
+        </div>
+        <div class="info-line"><svg class="icon"><use href="#i-info"/></svg>Your original headers and all additional columns stay exactly as they are.</div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-head">
+          <div>
+            <div class="card-title" style="font-size:16px">Preview your data</div>
+            <div class="card-sub" id="preview-sub">Showing 0 of 0 rows · Original file headers</div>
+          </div>
+          <div class="preview-chips" id="preview-chips"></div>
+        </div>
+        <div class="preview-table">
+          <div class="table-wrap">
+            <table class="table" id="preview-table">
+              <thead id="preview-thead"></thead>
+              <tbody id="preview-tbody"><tr><td class="empty">Upload a file to preview your data.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="preview-error-note"></div>
+        <div class="import-foot">
+          <label class="checkbox-row">
+            <input type="checkbox" id="skip-dupes" checked onchange="previewImportDebounced()" />
+            <span><span class="cb-title">Skip duplicate records</span><span class="cb-sub">Same license number and expiry date</span></span>
+          </label>
+          <div class="hint" id="import-summary">Upload a file to get started.</div>
+        </div>
+        <div class="form-footer">
+          <div class="form-note" id="import-foot-note">Choose a file and map the required columns.</div>
+          <div class="form-actions" style="margin:0">
+            <button class="btn btn-outline" type="button" onclick="resetImport()">Cancel</button>
+            <button class="btn btn-primary" type="button" id="btn-import" onclick="doImport()" disabled>Import customers</button>
+          </div>
+        </div>
+      </div>
+      <div class="result-banner" id="import-result" style="display:none"></div>
+    </section>
+
+    <!-- ================= UPCOMING EXPIRIES ================= -->
+    <section class="page" id="page-upcoming">
+      <div class="page-head">
+        <div>
+          <h1>Upcoming expiries</h1>
+          <p>Stay ahead of renewals. We'll handle the WhatsApp reminders.</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-outline" onclick="exportUpcoming()"><svg class="icon"><use href="#i-download"/></svg>Export list</button>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-top"><span>Expiring tomorrow</span><span class="chip chip-amber">Needs renewal</span></div>
+          <div class="summary-line"><div class="summary-value" id="up-tomorrow">0</div><div class="summary-date" id="up-tomorrow-date">—</div></div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-top"><span>Expiring in 2 days</span><span class="chip chip-amber">Needs renewal</span></div>
+          <div class="summary-line"><div class="summary-value" id="up-2days">0</div><div class="summary-date" id="up-2days-date">—</div></div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-top"><span>Reminders scheduled</span><span class="chip chip-green">Automated</span></div>
+          <div class="summary-line"><div class="summary-value" id="up-scheduled">0</div></div>
+          <div class="summary-sub">Customer + business owner</div>
+        </div>
+      </div>
+
+      <div class="banner">
+        <div class="banner-icon"><svg class="icon"><use href="#i-calendar"/></svg></div>
+        <div>
+          <div class="banner-title">2 days before expiry. One reminder, two recipients.</div>
+          <div class="banner-sub">Reminders go to the customer and business owner. Already expired licenses are never notified.</div>
+        </div>
+        <button class="link" onclick="navigate('settings')">Manage settings <svg class="icon"><use href="#i-arrow-right"/></svg></button>
+      </div>
+
+      <div class="card table-card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Next <span class="up-days-text">2</span> days <span class="chip chip-amber" id="up-count">0 licenses</span></div>
+          </div>
+          <button class="date-btn" id="up-range-btn" onclick="toggleUpcomingRange()"><span id="up-range">—</span><svg class="icon"><use href="#i-chevron"/></svg></button>
+        </div>
+        <div class="tab-body">
+          <div class="toolbar">
+            <div class="search-input w-search">
+              <svg class="icon"><use href="#i-search"/></svg>
+              <input class="input" id="up-search" type="text" placeholder="Search customers or licenses..." oninput="onUpcomingSearch()" />
+            </div>
+            <div class="spacer"></div>
+            <div class="select-wrap">
+              <select class="input w-filter" id="up-reminder" onchange="renderUpcomingTable()">
+                <option value="all">Reminder: All</option>
+                <option value="sent">Reminder: Sent</option>
+                <option value="failed">Reminder: Failed</option>
+                <option value="scheduled">Reminder: Scheduled</option>
+              </select>
+              <svg class="icon"><use href="#i-chevron"/></svg>
+            </div>
+          </div>
+          <div class="table-wrap" style="margin:0 -20px">
+            <table class="table">
+              <thead><tr><th>CUSTOMER</th><th>LICENSE</th><th>EXPIRY DATE</th><th>TIME LEFT</th><th>REMINDER</th><th style="width:48px"></th></tr></thead>
+              <tbody id="up-tbody"></tbody>
+            </table>
+          </div>
+          <div class="toolbar" style="margin:16px 0 0">
+            <div class="hint" style="font-size:11.5px;color:var(--muted-2)" id="up-showing">Showing 0 of 0 licenses</div>
+            <div class="spacer"></div>
+            <div class="pager" id="up-pager"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card automation-card">
+        <span class="chip chip-green">Automation active</span>
+        <div class="automation-main">
+          <div class="automation-title" id="up-next-check">Next check today at 9:00 AM</div>
+          <div class="automation-sub" id="up-auto-sub">Asia/Kolkata · 0 customer reminders + 0 owner notifications will be queued.</div>
+        </div>
+        <button class="link" onclick="navigate('notifications')">View notification history <svg class="icon"><use href="#i-arrow-right"/></svg></button>
+      </div>
+      <div class="page-note">No duplicate reminders are sent for the same customer and expiry date.</div>
+    </section>
+
+    <!-- ================= NOTIFICATIONS ================= -->
+    <section class="page" id="page-notifications">
+      <div class="page-head">
+        <div>
+          <h1>WhatsApp notifications</h1>
+          <p>Track every reminder, delivery and retry in one place.</p>
+        </div>
+        <div class="head-actions">
+          <div class="select-wrap">
+            <select class="input w-filter" id="notif-period" onchange="loadNotifications()">
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="all">All time</option>
+            </select>
+            <svg class="icon"><use href="#i-chevron"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Messages sent</div><div class="stat-value" id="nstat-sent">0</div><div class="stat-foot">Customer and owner messages</div></div>
+        <div class="stat-card"><div class="stat-label">Delivered</div><div class="stat-value green" id="nstat-delivered">0</div><div class="stat-foot" id="nstat-rate">0% delivery rate</div></div>
+        <div class="stat-card"><div class="stat-label">Pending</div><div class="stat-value purple" id="nstat-pending">0</div><div class="stat-foot">Queued for today, 9:00 AM</div></div>
+        <div class="stat-card"><div class="stat-label">Failed</div><div class="stat-value red" id="nstat-failed">0</div><div class="stat-foot">Review and retry safely</div></div>
+      </div>
+
+      <div class="card table-card">
+        <div class="tabs">
+          <button class="tab active" data-filter="" onclick="setNotifTab('', this)">All notifications</button>
+          <button class="tab" data-filter="pending" onclick="setNotifTab('pending', this)">Pending <span class="count" id="ncount-pending">0</span></button>
+          <button class="tab" data-filter="sent" onclick="setNotifTab('sent', this)">Sent <span class="count" id="ncount-sent">0</span></button>
+          <button class="tab" data-filter="failed" onclick="setNotifTab('failed', this)">Failed <span class="count" id="ncount-failed">0</span></button>
+        </div>
+        <div class="tab-body">
+          <div class="toolbar">
+            <div class="search-input w-search">
+              <svg class="icon"><use href="#i-search"/></svg>
+              <input class="input" id="notif-search" type="text" placeholder="Search customer, number or license..." oninput="onNotifSearch()" />
+            </div>
+            <div class="spacer"></div>
+            <div class="select-wrap">
+              <select class="input w-filter" id="notif-recipient" onchange="renderNotifications()">
+                <option value="all">Recipient: All</option>
+                <option value="customer">Recipient: Customer</option>
+                <option value="client">Recipient: Business owner</option>
+              </select>
+              <svg class="icon"><use href="#i-chevron"/></svg>
+            </div>
+          </div>
+          <div class="table-wrap" style="margin:0 -20px">
+            <table class="table">
+              <thead><tr><th>RECIPIENT</th><th>MESSAGE TYPE</th><th>LICENSE</th><th>SENT AT</th><th>STATUS</th><th>ACTION</th></tr></thead>
+              <tbody id="notif-tbody"></tbody>
+            </table>
+          </div>
+          <div class="toolbar" style="margin:16px 0 0">
+            <div class="hint" style="font-size:11.5px;color:var(--muted-2)" id="notif-showing">Showing 0 of 0 notifications</div>
+            <div class="spacer"></div>
+            <div class="pager" id="notif-pager"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card detail-card" id="notif-detail" style="display:none">
+        <div class="detail-head">
+          <span id="detail-status"></span>
+          <div class="detail-title" id="detail-title">Notification</div>
+        </div>
+        <div class="detail-meta" id="detail-meta"></div>
+        <div class="detail-body">
+          <div class="detail-left" id="detail-left"></div>
+          <div class="detail-actions">
+            <button class="btn btn-outline" onclick="viewDetailCustomer()">View customer</button>
+            <button class="btn btn-primary" id="detail-retry" onclick="retryFromDetail()"><svg class="icon"><use href="#i-whatsapp"/></svg>Retry message</button>
+          </div>
+        </div>
+        <div class="detail-note">Only confirmed failures can be retried. Delivered messages are never resent.</div>
+      </div>
+      <div class="page-note">Delivery statuses are updated from WhatsApp. All times shown in <span class="notif-tz">Asia/Kolkata</span>.</div>
+    </section>
+
+    <!-- ================= SETTINGS ================= -->
+    <section class="page" id="page-settings">
+      <div class="page-head">
+        <div>
+          <h1>Settings</h1>
+          <p>Manage your business, WhatsApp connection and reminder preferences.</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-primary" id="btn-save-settings" onclick="saveSettings()">Save changes</button>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+        <div class="settings-left">
+          <div class="card settings-card">
+            <h3>Business details</h3>
+            <div class="field-row">
+              <div class="field-col">
+                <label>Business name</label>
+                <input class="input" id="set-business" type="text" readonly title="Set BUSINESS_NAME in .env" />
+              </div>
+              <div class="field-col">
+                <label>Owner WhatsApp number</label>
+                <input class="input" id="set-owner" type="text" readonly title="Set CLIENT_WHATSAPP_NUMBER in .env" />
+                <div class="hint">Owner notifications will be sent to this number.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card settings-card">
+            <div class="settings-head-row">
+              <h3>WhatsApp Cloud API</h3>
+              <span class="chip chip-green" id="set-connected">Connected</span>
+            </div>
+            <div class="field-row">
+              <div class="field-col">
+                <label>Sending number</label>
+                <div class="mono" id="set-sending" style="padding-top:6px">—</div>
+              </div>
+              <div class="field-col" style="align-items:flex-end">
+                <button class="btn btn-outline" onclick="testWhatsApp()">Send test message</button>
+                <div class="hint" id="set-last-tested">Not tested yet</div>
+              </div>
+            </div>
+            <div class="inline-note">Connection managed securely on your server.<br>Access tokens are never displayed in the dashboard.</div>
+          </div>
+
+          <div class="card settings-card">
+            <h3>Reminder preferences</h3>
+            <div class="settings-row">
+              <div>
+                <div class="label">Automatic WhatsApp reminders</div>
+                <div class="hint">Send to the customer and business owner.</div>
+              </div>
+              <label class="switch"><input type="checkbox" id="set-scheduler" onchange="saveSettings(true)" /><span class="slider"></span></label>
+            </div>
+            <div class="divider"></div>
+            <div class="field-row" style="margin-top:0">
+              <div class="field-col">
+                <label>Send reminder</label>
+                <div class="select-wrap">
+                  <select class="input" id="set-days" onchange="renderMessagePreview()">
+                    <option value="1">Exactly 1 day before expiry</option>
+                    <option value="2">Exactly 2 days before expiry</option>
+                    <option value="3">Exactly 3 days before expiry</option>
+                    <option value="5">Exactly 5 days before expiry</option>
+                    <option value="7">Exactly 7 days before expiry</option>
+                  </select>
+                  <svg class="icon"><use href="#i-chevron"/></svg>
+                </div>
+              </div>
+              <div class="field-col">
+                <label>Daily check · Timezone</label>
+                <div class="select-wrap">
+                  <select class="input" id="set-tz" onchange="renderMessagePreview()">
+                    <option value="Asia/Kolkata">9:00 AM · Asia/Kolkata</option>
+                    <option value="Asia/Dubai">9:00 AM · Asia/Dubai</option>
+                    <option value="Asia/Singapore">9:00 AM · Asia/Singapore</option>
+                    <option value="Asia/Riyadh">9:00 AM · Asia/Riyadh</option>
+                    <option value="UTC">9:00 AM · UTC</option>
+                  </select>
+                  <svg class="icon"><use href="#i-chevron"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card settings-card">
+            <h3>Message templates</h3>
+            <div class="sub">Use Utility templates approved in Meta Business Manager.</div>
+            <div class="field-row">
+              <div class="field-col">
+                <label>Customer template</label>
+                <input class="input" id="set-cust-template" type="text" oninput="renderMessagePreview()" />
+              </div>
+              <div class="field-col">
+                <label>Owner template</label>
+                <input class="input" id="set-client-template" type="text" oninput="renderMessagePreview()" />
+              </div>
+            </div>
+            <div class="template-note">Template language: <span id="template-language">Hindi (hi)</span> · <b>Approval verified</b></div>
+          </div>
+        </div>
+
+        <div class="settings-right">
+          <div class="card settings-card">
+            <h3>Message preview</h3>
+            <div class="sub">Example values · WhatsApp Utility templates</div>
+            <div class="preview-label">To customer</div>
+            <div class="bubble" id="preview-customer"></div>
+            <div class="bubble-meta">9:00 AM ✓✓</div>
+            <div class="preview-label">To business owner</div>
+            <div class="bubble" id="preview-owner"></div>
+            <div class="bubble-meta">9:00 AM ✓✓</div>
+            <div class="divider"></div>
+            <div class="settings-row" style="margin-top:0">
+              <div>
+                <div class="label">Demo mode</div>
+                <div class="hint">When on, messages are simulated only.<br>No WhatsApp messages will be sent.</div>
+              </div>
+              <label class="switch"><input type="checkbox" id="set-demo" onchange="saveSettings(true)" /><span class="slider"></span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="secret-note">Secrets are stored on your server. Never share your WhatsApp access token.</div>
+    </section>
+  </main>
+</div>
+
+<!-- ================= EDIT MODAL ================= -->
+<div class="modal-backdrop" id="edit-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3>Edit customer</h3>
+        <p>Update the customer and license details.</p>
+      </div>
+      <button class="modal-close" onclick="closeModal('edit-modal')"><svg class="icon" style="width:14px;height:14px"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id" />
+      <div class="form-grid two">
+        <div class="form-group"><label>Customer name *</label><input class="input" type="text" id="edit-name" required /></div>
+        <div class="form-group"><label>Mobile number *</label><input class="input" type="tel" id="edit-mobile" required /></div>
+        <div class="form-group"><label>License number</label><input class="input" type="text" id="edit-license" placeholder="Optional" /></div>
+        <div class="form-group"><label>License issue date</label><input class="input" type="date" id="edit-issue" lang="en-GB" /></div>
+        <div class="form-group"><label>License expiry date *</label><input class="input" type="date" id="edit-expiry" lang="en-GB" required /></div>
+        <div class="form-group full"><label>Additional details</label><input class="input" type="text" id="edit-notes" placeholder="Company, product or customer notes" /></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('edit-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= DELETE MODAL ================= -->
+<div class="modal-backdrop" id="delete-modal">
+  <div class="modal modal-sm">
+    <div class="modal-head">
+      <div>
+        <h3>Delete customer</h3>
+        <p>This will remove the customer from active reminders.</p>
+      </div>
+      <button class="modal-close" onclick="closeModal('delete-modal')"><svg class="icon" style="width:14px;height:14px"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px;line-height:1.6;color:var(--muted)">Are you sure you want to delete <span class="delete-name" id="delete-name">this customer</span>? Their notification history will be kept, but no further reminders will be sent.</div>
+      <input type="hidden" id="delete-id" />
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('delete-modal')">Cancel</button>
+      <button class="btn btn-primary" style="background:#D64545" onclick="confirmDelete()">Delete customer</button>
+    </div>
+  </div>
+</div>
+<script>
+  /* =========================================================
+     STATE + UTILITIES
+  ========================================================= */
+  const $ = (id) => document.getElementById(id);
+
+  const S = {
+    page: 'dashboard',
+    stats: null,
+    settings: null,
+    previewCustomer: null,
+    customerMap: {},
+    customers: { page: 1, size: 5, status: '', search: '', total: 0, rows: [] },
+    dashCustomers: [],
+    dashNotifs: [],
+    upcoming: { days: 2, page: 1, size: 5, all: [], notifMap: {} },
+    notifs: { period: '7', filter: '', page: 1, size: 5, all: [], selected: null, stats: null },
+    import: { job: null, preview: null, issueCol: null, done: false, fileName: '', fileSize: 0 },
+    timers: {},
+  };
+
+  const PAGE_TITLES = {
+    dashboard: 'Dashboard',
+    customers: 'Customers',
+    import: 'Import Excel',
+    upcoming: 'Upcoming Expiries',
+    notifications: 'Notifications',
+    settings: 'Settings',
+  };
+
+  const TZ_OPTIONS = ['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'Asia/Riyadh', 'UTC'];
+
+  function esc(v) {
+    if (v === null || v === undefined || v === '') return '—';
+    return String(v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function fmtNum(n) { return Number(n || 0).toLocaleString('en-US'); }
+
+  function fmtPhone(v) {
+    if (!v) return '—';
+    const s = String(v).trim();
+    const digits = s.replace(/\D/g, '');
+    if (digits.length === 12 && digits.startsWith('91')) {
+      return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
+    }
+    if (s.startsWith('+')) return s;
+    return digits.length >= 10 ? '+' + digits : s;
+  }
+
+  function parseISO(iso) {
+    if (!iso) return null;
+    return new Date(String(iso).slice(0, 10) + 'T00:00:00');
+  }
+
+  function fmtDate(iso) {
+    const d = parseISO(iso);
+    if (!d || isNaN(d)) return '—';
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function fmtLongDate(d) {
+    if (!d) return '—';
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function fmtDateTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d)) return '—';
+    return d.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true })
+      .replace(/\b(am|pm)\b/i, (m) => m.toUpperCase());
+  }
+
+  function todayDate() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function addDays(d, n) {
+    const x = new Date(d);
+    x.setDate(x.getDate() + n);
+    return x;
+  }
+
+  function greeting() {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  function toast(msg, type = 'info') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<span>${msg}</span><span class="toast-close" onclick="this.parentElement.remove()">✕</span>`;
+    $('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 5000);
+  }
+
+  function showLoader(v) { $('loader').classList.toggle('active', v); }
+
+  function openModal(id) { $(id).classList.add('active'); }
+  function closeModal(id) { $(id).classList.remove('active'); }
+
+  async function api(path, opts = {}) {
+    const res = await fetch(`/api${path}`, {
+      headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+      ...opts,
+    });
+    let data = null;
+    try { data = await res.json(); } catch (e) { /* no body */ }
+    if (!res.ok) {
+      let msg = 'Request failed';
+      if (data) {
+        if (typeof data.detail === 'string') msg = data.detail;
+        else if (Array.isArray(data.detail)) msg = data.detail.map(d => d.msg || JSON.stringify(d)).join(', ');
+        else if (data.error) msg = data.error;
+        else if (data.message) msg = data.message;
+      }
+      throw new Error(msg);
+    }
+    return data;
+  }
+
+  function debounce(key, fn, ms) {
+    clearTimeout(S.timers[key]);
+    S.timers[key] = setTimeout(fn, ms);
+  }
+
+  /* =========================================================
+     CHIPS + LABELS
+  ========================================================= */
+  function customerStatusChip(c) {
+    if (c.status === 'active') return '<span class="chip chip-green">Active</span>';
+    if (c.status === 'expired') return '<span class="chip chip-red">Expired</span>';
+    return '<span class="chip chip-amber">Expiring soon</span>';
+  }
+
+  function timeLeftChip(c) {
+    const d = Number(c.days_until_expiry);
+    if (d < 0) return '<span class="chip chip-red">Expired</span>';
+    if (d === 0) return '<span class="chip chip-amber">Today</span>';
+    if (d === 1) return '<span class="chip chip-amber">Tomorrow</span>';
+    return `<span class="chip chip-amber">In ${d} days</span>`;
+  }
+
+  function reminderStatusFor(customer) {
+    const log = S.upcoming.notifMap[customer.id];
+    if (!log) return 'scheduled';
+    if (log.status === 'sent') return 'sent';
+    if (log.status === 'failed') return 'failed';
+    return 'scheduled';
+  }
+
+  function reminderChip(status) {
+    if (status === 'sent') return '<span class="chip chip-green">Sent</span>';
+    if (status === 'failed') return '<span class="chip chip-red">Failed</span>';
+    return '<span class="chip chip-gray">Scheduled</span>';
+  }
+
+  function notificationStatusChip(status) {
+    if (status === 'sent') return '<span class="chip chip-green">Delivered</span>';
+    if (status === 'failed') return '<span class="chip chip-red">Failed</span>';
+    return '<span class="chip chip-gray">Pending</span>';
+  }
+
+  function notifTypeLabel(n) { return n.notification_type === 'client' ? 'Owner notification' : 'Customer reminder'; }
+  function notifRecipientName(n) { return n.notification_type === 'client' ? 'Business owner' : (n.customer_name || 'Customer'); }
+
+  function nextCheckLabel(tz) {
+    try {
+      const hour = Number(new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: '2-digit', hour12: false }).format(new Date()));
+      return hour < 9 ? 'Next check today, 9:00 AM' : 'Next check tomorrow, 9:00 AM';
+    } catch (e) {
+      return 'Next check today, 9:00 AM';
+    }
+  }
+
+  /* =========================================================
+     NAVIGATION + SIDEBAR
+  ========================================================= */
+  function navigate(page, opts = {}) {
+    S.page = page;
+    document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === `page-${page}`));
+    document.querySelectorAll('.nav-link').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+    $('page-title').textContent = PAGE_TITLES[page] || page;
+    window.scrollTo(0, 0);
+
+    if (page === 'dashboard') loadDashboard();
+    else if (page === 'customers') {
+      if (opts.search !== undefined) {
+        S.customers.search = opts.search;
+        S.customers.page = 1;
+        $('cust-search').value = opts.search;
+      }
+      loadCustomers().then(() => {
+        if (opts.focusAdd) $('new-name').focus();
+      });
+    }
+    else if (page === 'upcoming') loadUpcoming();
+    else if (page === 'notifications') loadNotifications();
+    else if (page === 'settings') loadSettings();
+  }
+
+  function globalSearchKey(e) {
+    if (e.key === 'Enter') {
+      const q = e.target.value.trim();
+      navigate('customers', { search: q });
+    }
+  }
+
+  function logout() {
+    toast('You have been logged out of the demo session.', 'info');
+  }
+
+  function updateSidebarStats(stats) {
+    if (!stats) return;
+    const badge = $('side-upcoming-badge');
+    badge.textContent = fmtNum(stats.upcoming_expiries);
+    badge.style.display = stats.upcoming_expiries > 0 ? '' : 'none';
+    $('bell-dot').style.display = (stats.failed_notifications || stats.pending_notifications) ? '' : 'none';
+    if ($('cust-count-all')) $('cust-count-all').textContent = fmtNum(stats.total_customers);
+  }
+
+  function updateSidebarSettings(s) {
+    if (!s) return;
+    $('side-business').textContent = s.business_name || 'Aarav Technologies';
+    $('side-next-check').textContent = nextCheckLabel(s.timezone);
+    $('side-tz').textContent = s.timezone;
+    $('dash-tz-text').textContent = s.timezone;
+    if ($('cust-count-all')) $('cust-count-all').textContent = fmtNum(S.stats ? S.stats.total_customers : 0);
+    document.querySelectorAll('.notif-tz').forEach(el => el.textContent = s.timezone);
+    const days = Number(s.reminder_days_before || 2);
+    $('banner-days').textContent = `${days} ${days === 1 ? 'day' : 'days'}`;
+    document.querySelectorAll('.days-text').forEach(el => el.textContent = days);
+    const chip = $('automation-chip');
+    chip.textContent = s.scheduler_enabled ? 'Automation active' : 'Automation paused';
+    chip.className = `chip ${s.scheduler_enabled ? 'chip-green' : 'chip-gray'}`;
+    $('up-next-check').textContent = `Next check ${nextCheckLabel(s.timezone).replace('Next check ', '').toLowerCase()} at 9:00 AM`;
+  }
+
+  /* =========================================================
+     DASHBOARD
+  ========================================================= */
+  async function loadDashboard() {
+    $('dash-greeting').textContent = `${greeting()}, Admin`;
+    try {
+      const [stats, cust, notifs] = await Promise.all([
+        api('/dashboard'),
+        api('/customers?page_size=100'),
+        api('/notifications?page_size=50'),
+      ]);
+      S.stats = stats;
+      S.dashCustomers = cust.customers || [];
+      S.dashNotifs = notifs.notifications || [];
+      S.dashCustomers.forEach(c => { S.customerMap[c.id] = c; });
+      updateSidebarStats(stats);
+      renderDashboard(stats, S.dashCustomers, S.dashNotifs);
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  }
+
+  function renderDashboard(stats, customers, notifications) {
+    const total = Number(stats.total_customers || 0);
+    const active = Number(stats.active_licenses || 0);
+    const days = Number(stats.reminder_days_before || 2);
+    $('stat-total').textContent = fmtNum(total);
+    $('stat-active').textContent = fmtNum(active);
+    $('stat-upcoming').textContent = fmtNum(stats.upcoming_expiries);
+    $('stat-expired').textContent = fmtNum(stats.expired_licenses);
+    $('stat-active-foot').textContent = `${total ? Math.round((active / total) * 100) : 0}% of all licenses`;
+    $('stat-upcoming-foot').textContent = `Within the next ${days} ${days === 1 ? 'day' : 'days'}`;
+
+    // Latest reminder status per customer (from most recent logs).
+    S.upcoming.notifMap = {};
+    [...notifications].forEach(n => {
+      if (!S.upcoming.notifMap[n.customer_id]) S.upcoming.notifMap[n.customer_id] = n;
+    });
+
+    const upcoming = customers
+      .filter(c => c.days_until_expiry >= 0 && c.days_until_expiry <= days)
+      .sort((a, b) => a.days_until_expiry - b.days_until_expiry);
+
+    $('dash-upcoming-chip').textContent = `${fmtNum(upcoming.length)} ${upcoming.length === 1 ? 'license' : 'licenses'}`;
+    const tbody = $('dash-expiring-body');
+    if (!upcoming.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">No licenses expiring in the next few days.</td></tr>';
+    } else {
+      tbody.innerHTML = upcoming.slice(0, 3).map(c => {
+        const status = reminderStatusFor(c);
+        return `<tr onclick="navigateToCustomer(${c.id})" style="cursor:pointer">
+          <td><div class="cell-title">${esc(c.name)}</div><div class="cell-sub">${fmtPhone(c.mobile)}</div></td>
+          <td><div class="cell-strong">${esc(c.license_number || '—')}</div>${c.notes ? `<div class="cell-sub">${esc(c.notes)}</div>` : ''}</td>
+          <td>${fmtDate(c.expiry_date)}</td>
+          <td>${timeLeftChip(c)}</td>
+          <td>${reminderChip(status)}</td>
+          <td class="td-right"><span class="row-arrow"><svg class="icon" style="width:14px;height:14px"><use href="#i-external"/></svg></span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    $('dash-notif-list').innerHTML = notifications.length
+      ? notifications.slice(0, 4).map(n => {
+          const isClient = n.notification_type === 'client';
+          return `<div class="notif-row">
+            <div class="notif-icon"><svg class="icon icon-fill"><use href="#i-whatsapp"/></svg></div>
+            <div class="notif-main">
+              <div class="notif-name">${isClient ? 'Business owner' : esc(n.customer_name)}</div>
+              <div class="notif-sub">${isClient ? `${esc(n.customer_name)} - expiry notification` : 'Customer reminder'}</div>
+            </div>
+            <div class="notif-time">${n.status === 'pending' ? 'Scheduled 9:00 AM' : fmtDateTime(n.sent_at || n.created_at)}</div>
+            ${notificationStatusChip(n.status)}
+          </div>`;
+        }).join('')
+      : '<div class="empty" style="padding:20px 0">No notifications yet.</div>';
+
+    $('dash-sync').textContent = 'Last synced just now';
+  }
+
+  /* =========================================================
+     CUSTOMERS
+  ========================================================= */
+  async function loadCustomers() {
+    try {
+      const p = S.customers;
+      let url = `/customers?page=${p.page}&page_size=${p.size}`;
+      if (p.status) url += `&status_filter=${p.status}`;
+      if (p.search) url += `&search=${encodeURIComponent(p.search)}`;
+      const d = await api(url);
+      p.total = d.total;
+      p.rows = d.customers || [];
+      p.rows.forEach(c => { S.customerMap[c.id] = c; });
+      const allCount = S.stats ? S.stats.total_customers : d.total;
+      $('cust-count-all').textContent = fmtNum(allCount);
+      renderCustomers();
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  }
+
+  function renderCustomers() {
+    const p = S.customers;
+    let rows = [...p.rows];
+    const type = $('cust-type').value;
+    if (type === 'with') rows = rows.filter(c => c.license_number);
+    if (type === 'without') rows = rows.filter(c => !c.license_number);
+    const sort = $('cust-sort').value;
+    if (sort === 'name') rows.sort((a, b) => a.name.localeCompare(b.name));
+    else if (sort === 'expiry') rows.sort((a, b) => parseISO(a.expiry_date) - parseISO(b.expiry_date));
+    else rows.sort((a, b) => (b.id || 0) - (a.id || 0));
+
+    const tbody = $('customers-tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">No customers found. Add your first customer below.</td></tr>';
+    } else {
+      tbody.innerHTML = rows.map(c => {
+        const product = (c.extra_data && (c.extra_data.Product || c.extra_data.product || c.extra_data['License Type'])) || '';
+        const main = product || c.license_number || '—';
+        const sub = product && c.license_number ? c.license_number : '';
+        return `<tr>
+          <td><input type="checkbox" class="cust-row-check" style="accent-color:#6D4AFF"></td>
+          <td><div class="cell-title">${esc(c.name)}</div><div class="cell-sub">${fmtPhone(c.mobile)}</div></td>
+          <td><div class="cell-strong">${esc(main)}</div>${sub ? `<div class="cell-sub">${esc(sub)}</div>` : ''}</td>
+          <td>${fmtDate(c.expiry_date)}</td>
+          <td>${customerStatusChip(c)}</td>
+          <td>
+            <button class="link" onclick="openEdit(${c.id})">Edit</button>
+            <button class="link link-danger" style="margin-left:14px" onclick="openDelete(${c.id})">Delete</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    const from = p.total ? (p.page - 1) * p.size + 1 : 0;
+    const to = Math.min(p.page * p.size, p.total);
+    $('cust-range').textContent = `Showing ${fmtNum(from)}–${fmtNum(to)} of ${fmtNum(p.total)} customers`;
+    renderPager('cust-pager', p.page, Math.max(1, Math.ceil(p.total / p.size)), 'changeCustPage');
+  }
+
+  function renderPager(id, page, pages, fnName) {
+    const nums = [];
+    let start = Math.max(1, page - 1);
+    const end = Math.min(pages, start + 2);
+    start = Math.max(1, end - 2);
+    for (let i = start; i <= end; i++) {
+      nums.push(`<button class="page-num ${i === page ? 'active' : ''}" onclick="${fnName}(${i})">${i}</button>`);
+    }
+    $(id).innerHTML = `
+      <button class="page-btn" onclick="${fnName}(${page - 1})" ${page <= 1 ? 'disabled' : ''}>← Previous</button>
+      ${nums.join('')}
+      <button class="page-btn" onclick="${fnName}(${page + 1})" ${page >= pages ? 'disabled' : ''}>Next →</button>`;
+  }
+
+  function setCustomerTab(status, el) {
+    S.customers.status = status;
+    S.customers.page = 1;
+    document.querySelectorAll('#page-customers .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    loadCustomers();
+  }
+
+  function onCustomerSearch() {
+    debounce('cust', () => {
+      S.customers.search = $('cust-search').value.trim();
+      S.customers.page = 1;
+      loadCustomers();
+    }, 300);
+  }
+
+  function changeCustPage(page) {
+    const pages = Math.max(1, Math.ceil(S.customers.total / S.customers.size));
+    S.customers.page = Math.min(Math.max(1, page), pages);
+    loadCustomers();
+  }
+
+  function toggleAllCustomers(el) {
+    document.querySelectorAll('.cust-row-check').forEach(cb => { cb.checked = el.checked; });
+  }
+
+  async function submitCustomer(e) {
+    e.preventDefault();
+    const payload = {
+      name: $('new-name').value.trim(),
+      mobile: $('new-mobile').value.trim(),
+      license_number: $('new-license').value.trim() || null,
+      issue_date: $('new-issue').value || null,
+      expiry_date: $('new-expiry').value,
+      notes: $('new-notes').value.trim() || null,
+    };
+    if (!payload.name || !payload.mobile || !payload.expiry_date) {
+      toast('Please fill all required fields.', 'warning');
+      return;
+    }
+    try {
+      showLoader(true);
+      await api('/customers', { method: 'POST', body: JSON.stringify(payload) });
+      toast('Customer added successfully.', 'success');
+      clearCustomerForm();
+      loadCustomers();
+      loadDashboard();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      showLoader(false);
+    }
+  }
+
+  function clearCustomerForm() {
+    $('add-customer-form').reset();
+  }
+
+  function openEdit(id) {
+    const c = S.customerMap[id];
+    if (!c) return;
+    $('edit-id').value = c.id;
+    $('edit-name').value = c.name || '';
+    $('edit-mobile').value = c.mobile || '';
+    $('edit-license').value = c.license_number || '';
+    $('edit-issue').value = c.issue_date || '';
+    $('edit-expiry').value = c.expiry_date || '';
+    $('edit-notes').value = c.notes || '';
+    openModal('edit-modal');
+  }
+
+  async function saveEdit() {
+    const id = $('edit-id').value;
+    const payload = {
+      name: $('edit-name').value.trim(),
+      mobile: $('edit-mobile').value.trim(),
+      license_number: $('edit-license').value.trim() || null,
+      issue_date: $('edit-issue').value || null,
+      expiry_date: $('edit-expiry').value,
+      notes: $('edit-notes').value.trim() || null,
+    };
+    if (!payload.name || !payload.mobile || !payload.expiry_date) {
+      toast('Please fill all required fields.', 'warning');
+      return;
+    }
+    try {
+      showLoader(true);
+      await api(`/customers/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+      toast('Customer updated successfully.', 'success');
+      closeModal('edit-modal');
+      loadCustomers();
+      loadDashboard();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      showLoader(false);
+    }
+  }
+
+  function openDelete(id) {
+    const c = S.customerMap[id];
+    if (!c) return;
+    $('delete-id').value = id;
+    $('delete-name').textContent = c.name;
+    openModal('delete-modal');
+  }
+
+  async function confirmDelete() {
+    const id = $('delete-id').value;
+    try {
+      showLoader(true);
+      await api(`/customers/${id}`, { method: 'DELETE' });
+      toast('Customer deleted.', 'success');
+      closeModal('delete-modal');
+      loadCustomers();
+      loadDashboard();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      showLoader(false);
+    }
+  }
+</script>
+<script>
+  /* =========================================================
+     IMPORT
+  ========================================================= */
+  function onDragOver(e) { e.preventDefault(); $('upload-box').classList.add('drag-over'); }
+  function onDragLeave() { $('upload-box').classList.remove('drag-over'); }
+  function onFileDrop(e) {
+    e.preventDefault();
+    $('upload-box').classList.remove('drag-over');
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) uploadFile(file);
+  }
+  function onFileSelect(e) {
+    const file = e.target.files && e.target.files[0];
+    if (file) uploadFile(file);
+  }
+
+  function bytesLabel(n) {
+    if (!n && n !== 0) return '';
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  async function uploadFile(file) {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!['xlsx', 'xls', 'csv'].includes(ext)) {
+      toast('Unsupported file type. Please choose an .xlsx, .xls or .csv file.', 'warning');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast('File is too large. Maximum file size is 10 MB.', 'warning');
+      return;
+    }
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      showLoader(true);
+      const res = await fetch('/api/upload', { method: 'POST', body: form });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || 'Upload failed');
+      S.import.job = d;
+      S.import.preview = null;
+      S.import.done = false;
+      S.import.fileName = file.name;
+      S.import.fileSize = file.size;
+      S.import.issueCol = null;
+      $('file-input').value = '';
+      renderFileCard();
+      populateMapping(d.columns);
+      updateImportSteps(2);
+      await updatePreview();
+      toast('File uploaded. Map the columns and preview your data.', 'success');
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      showLoader(false);
+    }
+  }
+
+  function renderFileCard() {
+    const job = S.import.job;
+    if (!job) return;
+    $('upload-empty').style.display = 'none';
+    const fileEl = $('upload-file');
+    fileEl.style.display = 'flex';
+    const ext = (S.import.fileName.split('.').pop() || '').toUpperCase();
+    const badge = ext === 'XLSX' ? 'XLS' : ext;
+    fileEl.innerHTML = `
+      <div class="file-badge">${esc(badge)}</div>
+      <div class="file-main">
+        <div class="file-name">${esc(S.import.fileName)}</div>
+        <div class="file-meta">${fmtNum(job.total_rows)} rows · ${fmtNum(job.columns.length)} columns · ${bytesLabel(S.import.fileSize)}</div>
+      </div>
+      <div class="upload-copy">
+        <div>Drag &amp; drop a new file here, or <button type="button" class="link" onclick="$('file-input').click()">browse files</button></div>
+        <div class="upload-hint">.xlsx, .xls or .csv · Maximum file size: 10 MB</div>
+      </div>
+      <span style="color:#16A34A"><svg class="icon"><use href="#i-check"/></svg></span>
+      <button type="button" class="btn btn-outline" onclick="$('file-input').click()">Replace file</button>`;
+  }
+
+  function populateMapping(columns) {
+    const autoMap = {
+      'map-name': ['name', 'customer name', 'customer', 'full name', 'client name'],
+      'map-mobile': ['mobile', 'phone', 'contact', 'whatsapp', 'mobile no', 'phone number', 'contact number'],
+      'map-license': ['license', 'licence', 'license no', 'license number', 'licence no', 'license id'],
+      'map-expiry': ['expiry', 'expiry date', 'expire', 'expiration', 'valid upto', 'valid till', 'valid until'],
+    };
+    Object.entries(autoMap).forEach(([id, keywords]) => {
+      const sel = $(id);
+      sel.innerHTML = '<option value="">Select column</option>';
+      columns.forEach(col => {
+        const opt = document.createElement('option');
+        opt.value = col;
+        opt.textContent = col;
+        sel.appendChild(opt);
+      });
+      const match = columns.find(c => keywords.some(k => c.toLowerCase().includes(k)));
+      if (match) sel.value = match;
+    });
+    const issueMatch = columns.find(c => ['issue date', 'issue', 'issued', 'start date', 'from date'].some(k => c.toLowerCase().includes(k)));
+    S.import.issueCol = issueMatch || null;
+  }
+
+  function getMapping(showErrors) {
+    if (!S.import.job) return null;
+    const name = $('map-name').value;
+    const mobile = $('map-mobile').value;
+    const license = $('map-license').value;
+    const expiry = $('map-expiry').value;
+    if (!name || !mobile || !license || !expiry) {
+      if (showErrors) toast('Please map all required columns (name, mobile, license, expiry).', 'warning');
+      return null;
+    }
+    return {
+      job_id: S.import.job.job_id,
+      name_col: name,
+      mobile_col: mobile,
+      license_col: license,
+      expiry_col: expiry,
+      issue_col: S.import.issueCol || null,
+      skip_duplicates: $('skip-dupes').checked,
+    };
+  }
+
+  function previewImportDebounced() {
+    debounce('preview', updatePreview, 350);
+  }
+
+  async function updatePreview() {
+    if (!S.import.job) return;
+    const mapping = getMapping(false);
+    if (!mapping) return;
+    try {
+      const d = await api('/upload/preview', { method: 'POST', body: JSON.stringify(mapping) });
+      S.import.preview = d;
+      renderPreview();
+      updateImportSteps(2);
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
+  function describeRowError(e) {
+    return (e.errors || []).map(x => String(x).replace(/^Invalid mobile:/, 'Invalid mobile number:')).join('; ');
+  }
+
+  function rowIsInvalid(row) {
+    const nameCol = $('map-name').value;
+    const mobileCol = $('map-mobile').value;
+    const expiryCol = $('map-expiry').value;
+    const name = String(row[nameCol] ?? '').trim();
+    const mobile = String(row[mobileCol] ?? '').replace(/[\s\-\+\.]/g, '');
+    const expiry = String(row[expiryCol] ?? '').trim();
+    return !name || !/^\d{10,15}$/.test(mobile) || !expiry;
+  }
+
+  function renderPreview() {
+    const d = S.import.preview;
+    const job = S.import.job;
+    if (!d || !job) return;
+    const total = Number(d.total || 0);
+    const valid = Number(d.valid || 0);
+    const dupes = Number(d.duplicates || 0);
+    const errors = (d.errors || []).length;
+    const skipDup = $('skip-dupes').checked;
+    const ready = Math.max(0, skipDup ? valid - dupes : valid);
+    const skipped = Math.max(0, total - ready);
+
+    $('preview-chips').innerHTML = `
+      <span class="chip chip-green">${fmtNum(ready)} ready</span>
+      ${dupes ? `<span class="chip chip-amber">${fmtNum(dupes)} duplicates</span>` : ''}
+      ${errors ? `<span class="chip chip-red">${fmtNum(errors)} ${errors === 1 ? 'error' : 'errors'}</span>` : ''}`;
+
+    const shown = Math.min(3, (job.preview || []).length);
+    $('preview-sub').textContent = `Showing ${shown} of ${fmtNum(total)} rows · Original file headers`;
+
+    const cols = (job.columns || []).slice(0, 6);
+    $('preview-thead').innerHTML = '<tr>' + cols.map(c => `<th style="text-transform:none;font-size:11.5px;font-weight:500">${esc(c)}</th>`).join('') + '</tr>';
+    const mobileCol = $('map-mobile').value;
+    $('preview-tbody').innerHTML = (job.preview || []).slice(0, 3).map(row => {
+      const bad = rowIsInvalid(row);
+      return `<tr class="${bad ? 'error-row' : ''}">` + cols.map(col => {
+        const isMobile = col === mobileCol;
+        const value = row[col];
+        const cls = isMobile && bad ? 'error-text' : (col === cols[0] ? 'cell-title' : '');
+        return `<td class="${cls}">${esc(String(value ?? ''))}</td>`;
+      }).join('') + '</tr>';
+    }).join('') || '<tr><td class="empty">No preview rows.</td></tr>';
+
+    if ((d.errors || []).length) {
+      const e = d.errors[0];
+      $('preview-error-note').innerHTML = `<div class="preview-note"><svg class="icon"><use href="#i-alert"/></svg><div>Row ${e.row}: ${esc(describeRowError(e))} This row will be excluded until corrected in your source file.</div></div>`;
+    } else {
+      $('preview-error-note').innerHTML = '';
+    }
+
+    $('import-summary').textContent = S.import.done && S.import.result
+      ? `${fmtNum(S.import.result.imported)} customers imported. ${fmtNum(skipped)} ${skipped === 1 ? 'row' : 'rows'} skipped.`
+      : `${fmtNum(ready)} customers will be imported. ${fmtNum(skipped)} ${skipped === 1 ? 'row' : 'rows'} will be skipped.`;
+    $('import-foot-note').textContent = skipDup
+      ? 'Duplicate records are skipped based on license number and expiry date.'
+      : 'Duplicate records will also be imported.';
+    const btn = $('btn-import');
+    btn.disabled = ready <= 0 || S.import.done;
+    btn.textContent = S.import.done ? 'Imported' : `Import ${fmtNum(ready)} customer${ready === 1 ? '' : 's'}`;
+  }
+
+  async function doImport() {
+    const mapping = getMapping(true);
+    if (!mapping) return;
+    try {
+      showLoader(true);
+      const d = await api('/upload/import', { method: 'POST', body: JSON.stringify(mapping) });
+      S.import.done = true;
+      S.import.result = d;
+      updateImportSteps(3, true);
+      $('import-result').style.display = 'flex';
+      $('import-result').innerHTML = `<svg class="icon"><use href="#i-check-circle"/></svg><div><b>${fmtNum(d.imported)} customers imported.</b> ${fmtNum(d.errors)} ${Number(d.errors) === 1 ? 'row' : 'rows'} had errors. You can now review the imported customers.</div>`;
+      toast(`Import complete — ${d.imported} customers imported.`, 'success');
+      renderPreview();
+      loadDashboard();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      showLoader(false);
+    }
+  }
+
+  function updateImportSteps(step, complete = false) {
+    for (let i = 1; i <= 3; i++) {
+      const el = $(`import-step-${i}`);
+      const circle = $(`import-step-${i}-circle`);
+      const sub = $(`import-step-${i}-sub`);
+      el.classList.remove('done', 'current');
+      let state = 'next';
+      if (complete || i < step) { el.classList.add('done'); state = 'done'; }
+      else if (i === step) { el.classList.add('current'); state = 'current'; }
+      circle.innerHTML = state === 'done' ? '<svg class="icon" style="width:14px;height:14px"><use href="#i-check"/></svg>' : i;
+      sub.textContent = state === 'done' ? 'Complete' : state === 'current' ? 'Current step' : 'Next';
+    }
+  }
+
+  function resetImport() {
+    S.import = { job: null, preview: null, issueCol: null, done: false, fileName: '', fileSize: 0 };
+    $('file-input').value = '';
+    $('upload-empty').style.display = 'flex';
+    $('upload-file').style.display = 'none';
+    $('upload-file').innerHTML = '';
+    $('preview-chips').innerHTML = '';
+    $('preview-thead').innerHTML = '';
+    $('preview-tbody').innerHTML = '<tr><td class="empty">Upload a file to preview your data.</td></tr>';
+    $('preview-sub').textContent = 'Showing 0 of 0 rows · Original file headers';
+    $('preview-error-note').innerHTML = '';
+    $('import-summary').textContent = 'Upload a file to get started.';
+    $('import-foot-note').textContent = 'Choose a file and map the required columns.';
+    $('import-result').style.display = 'none';
+    $('btn-import').disabled = true;
+    $('btn-import').textContent = 'Import customers';
+    ['map-name', 'map-mobile', 'map-license', 'map-expiry'].forEach(id => { $(id).innerHTML = ''; });
+    updateImportSteps(1);
+  }
+
+  function downloadSampleFile() {
+    const csv = [
+      'Full Name,WhatsApp No.,License ID,Valid Till,Product,City',
+      'Rahul Sharma,+91 98765 43210,LIC-2026-1042,19/11/2026,Microsoft 365,Mumbai',
+      'Priya Mehta,+91 98210 56789,LIC-2026-1038,19/11/2026,Adobe CC,Pune',
+      'Karan Shah,9876,LIC-2026-1044,30/12/2026,TallyPrime,Ahmedabad'
+    ].join('\n');
+    downloadBlob('customers_sample.csv', 'text/csv;charset=utf-8;', csv);
+  }
+
+  function downloadBlob(filename, type, content) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1200);
+  }
+
+  /* =========================================================
+     UPCOMING EXPIRIES
+  ========================================================= */
+  async function loadUpcoming() {
+    try {
+      const [cust, notifs] = await Promise.all([
+        api('/customers?page_size=500'),
+        api('/notifications?page_size=200'),
+      ]);
+      S.upcoming.notifMap = {};
+      (notifs.notifications || []).forEach(n => {
+        if (!S.upcoming.notifMap[n.customer_id]) S.upcoming.notifMap[n.customer_id] = n;
+      });
+      (cust.customers || []).forEach(c => { S.customerMap[c.id] = c; });
+      const days = S.upcoming.days;
+      S.upcoming.all = (cust.customers || [])
+        .filter(c => c.days_until_expiry >= 0 && c.days_until_expiry <= days)
+        .sort((a, b) => parseISO(a.expiry_date) - parseISO(b.expiry_date));
+      S.upcoming.page = 1;
+      renderUpcomingSummary();
+      renderUpcomingTable();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
+  function rangeLabel(days) {
+    const start = todayDate();
+    const end = addDays(start, days);
+    const m1 = start.toLocaleDateString('en-GB', { month: 'short' });
+    const m2 = end.toLocaleDateString('en-GB', { month: 'short' });
+    if (m1 === m2) return `${start.getDate()} – ${end.getDate()} ${m2} ${end.getFullYear()}`;
+    return `${start.getDate()} ${m1} – ${end.getDate()} ${m2} ${end.getFullYear()}`;
+  }
+
+  function renderUpcomingSummary() {
+    const rows = S.upcoming.all;
+    const tomorrow = rows.filter(c => c.days_until_expiry === 1).length;
+    const inTwo = rows.filter(c => c.days_until_expiry === 2).length;
+    const today = todayDate();
+    $('up-tomorrow').textContent = fmtNum(tomorrow);
+    $('up-tomorrow-date').textContent = fmtLongDate(addDays(today, 1));
+    $('up-2days').textContent = fmtNum(inTwo);
+    $('up-2days-date').textContent = fmtLongDate(addDays(today, 2));
+    $('up-scheduled').textContent = fmtNum(rows.length);
+    $('up-range').textContent = rangeLabel(S.upcoming.days);
+    $('up-count').textContent = `${fmtNum(rows.length)} ${rows.length === 1 ? 'license' : 'licenses'}`;
+    document.querySelectorAll('.up-days-text').forEach(el => { el.textContent = S.upcoming.days; });
+    const tz = S.settings ? S.settings.timezone : 'Asia/Kolkata';
+    const next = nextCheckLabel(tz).replace('Next check ', '').replace(',', ' at');
+    $('up-next-check').textContent = `Next check ${next}`;
+    $('up-auto-sub').textContent = `${tz} · ${fmtNum(rows.length)} customer reminders + ${fmtNum(rows.length)} owner notifications will be queued.`;
+  }
+
+  function upcomingFiltered() {
+    const q = $('up-search').value.trim().toLowerCase();
+    const filter = $('up-reminder').value;
+    return S.upcoming.all.filter(c => {
+      if (q && !(`${c.name} ${c.mobile} ${c.license_number}`.toLowerCase().includes(q))) return false;
+      if (filter !== 'all' && reminderStatusFor(c) !== filter) return false;
+      return true;
+    });
+  }
+
+  function renderUpcomingTable() {
+    const rows = upcomingFiltered();
+    const total = rows.length;
+    const pages = Math.max(1, Math.ceil(total / S.upcoming.size));
+    S.upcoming.page = Math.min(S.upcoming.page, pages);
+    const start = (S.upcoming.page - 1) * S.upcoming.size;
+    const pageRows = rows.slice(start, start + S.upcoming.size);
+    const tbody = $('up-tbody');
+    if (!pageRows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">No licenses expiring in this window.</td></tr>';
+    } else {
+      tbody.innerHTML = pageRows.map(c => {
+        const product = (c.extra_data && (c.extra_data.Product || c.extra_data.product)) || '';
+        const main = product || c.license_number || '—';
+        const sub = product && c.license_number ? c.license_number : '';
+        return `<tr>
+          <td><div class="cell-title">${esc(c.name)}</div><div class="cell-sub">${fmtPhone(c.mobile)}</div></td>
+          <td><div class="cell-strong">${esc(main)}</div>${sub ? `<div class="cell-sub">${esc(sub)}</div>` : ''}</td>
+          <td>${fmtDate(c.expiry_date)}</td>
+          <td>${timeLeftChip(c)}</td>
+          <td>${reminderChip(reminderStatusFor(c))}</td>
+          <td class="td-right"><button class="row-arrow" style="border:0;background:none;cursor:pointer" onclick="navigateToCustomer(${c.id})"><svg class="icon" style="width:14px;height:14px"><use href="#i-external"/></svg></button></td>
+        </tr>`;
+      }).join('');
+    }
+    $('up-showing').textContent = `Showing ${fmtNum(total ? start + 1 : 0)}–${fmtNum(Math.min(start + S.upcoming.size, total))} of ${fmtNum(total)} licenses`;
+    renderPager('up-pager', S.upcoming.page, pages, 'changeUpcomingPage');
+  }
+
+  function changeUpcomingPage(page) {
+    const pages = Math.max(1, Math.ceil(upcomingFiltered().length / S.upcoming.size));
+    S.upcoming.page = Math.min(Math.max(1, page), pages);
+    renderUpcomingTable();
+  }
+
+  function onUpcomingSearch() { debounce('up', () => { S.upcoming.page = 1; renderUpcomingTable(); }, 200); }
+
+  function toggleUpcomingRange() {
+    S.upcoming.days = S.upcoming.days === 2 ? 7 : 2;
+    loadUpcoming();
+  }
+
+  function exportUpcoming() {
+    const rows = upcomingFiltered();
+    if (!rows.length) { toast('There are no upcoming licenses to export.', 'warning'); return; }
+    const lines = ['Customer,Mobile,License,Expiry Date,Time Left,Reminder'];
+    rows.forEach(c => {
+      const reminder = reminderStatusFor(c);
+      lines.push([
+        `"${(c.name || '').replace(/"/g, '""')}"`,
+        c.mobile || '',
+        c.license_number || '',
+        c.expiry_date || '',
+        `"${timeLeftLabel(c)}"`,
+        reminder === 'sent' ? 'Sent' : reminder === 'failed' ? 'Failed' : 'Scheduled',
+      ].join(','));
+    });
+    downloadBlob('upcoming_expiries.csv', 'text/csv;charset=utf-8;', lines.join('\n'));
+  }
+
+  function timeLeftLabel(c) {
+    const d = Number(c.days_until_expiry);
+    if (d < 0) return 'Expired';
+    if (d === 0) return 'Today';
+    if (d === 1) return 'Tomorrow';
+    return `In ${d} days`;
+  }
+
+  function navigateToCustomer(id) {
+    const c = S.customerMap[id];
+    navigate('customers', { search: c ? c.name : '' });
+  }
+
+  /* =========================================================
+     NOTIFICATIONS
+  ========================================================= */
+  async function loadNotifications() {
+    try {
+      const [list, stats] = await Promise.all([api('/notifications?page_size=100'), api('/dashboard')]);
+      S.stats = stats;
+      updateSidebarStats(stats);
+      S.notifs.stats = stats;
+      const period = $('notif-period').value;
+      const all = list.notifications || [];
+      const now = Date.now();
+      S.notifs.periodList = period === 'all'
+        ? all
+        : all.filter(n => (now - new Date(n.created_at).getTime()) <= Number(period) * 86400000);
+      renderNotifStats();
+      if (!S.notifs.selected || !S.notifs.periodList.some(n => n.id === S.notifs.selected.id)) {
+        S.notifs.selected = S.notifs.periodList.find(n => n.status === 'failed') || S.notifs.periodList[0] || null;
+      }
+      renderNotifications();
+      renderNotifDetail();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
+  function renderNotifStats() {
+    const all = S.notifs.periodList || [];
+    const delivered = all.filter(n => n.status === 'sent').length;
+    const pending = all.filter(n => n.status === 'pending').length;
+    const failed = all.filter(n => n.status === 'failed').length;
+    $('nstat-sent').textContent = fmtNum(all.length);
+    $('nstat-delivered').textContent = fmtNum(delivered);
+    $('nstat-pending').textContent = fmtNum(pending);
+    $('nstat-failed').textContent = fmtNum(failed);
+    $('nstat-rate').textContent = `${all.length ? ((delivered / all.length) * 100).toFixed(1) : '0'}% delivery rate`;
+    $('ncount-pending').textContent = fmtNum(pending);
+    $('ncount-sent').textContent = fmtNum(delivered);
+    $('ncount-failed').textContent = fmtNum(failed);
+  }
+
+  function setNotifTab(filter, el) {
+    S.notifs.filter = filter;
+    S.notifs.page = 1;
+    document.querySelectorAll('#page-notifications .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderNotifications();
+  }
+
+  function notifFiltered() {
+    const q = $('notif-search').value.trim().toLowerCase();
+    const recipient = $('notif-recipient').value;
+    return (S.notifs.periodList || []).filter(n => {
+      if (S.notifs.filter && n.status !== S.notifs.filter) return false;
+      if (recipient !== 'all' && n.notification_type !== recipient) return false;
+      if (q && !(`${n.customer_name} ${n.recipient_number} ${n.license_number}`.toLowerCase().includes(q))) return false;
+      return true;
+    });
+  }
+
+  function renderNotifications() {
+    const rows = notifFiltered();
+    const total = rows.length;
+    const pages = Math.max(1, Math.ceil(total / S.notifs.size));
+    S.notifs.page = Math.min(S.notifs.page, pages);
+    const start = (S.notifs.page - 1) * S.notifs.size;
+    const pageRows = rows.slice(start, start + S.notifs.size);
+    const tbody = $('notif-tbody');
+    if (!pageRows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">No notifications found.</td></tr>';
+    } else {
+      tbody.innerHTML = pageRows.map(n => {
+        const failed = n.status === 'failed';
+        const action = failed
+          ? `<button class="link" onclick="retryNotification(${n.id})">Retry</button>`
+          : `<button class="link" onclick="viewNotification(${n.id})">View <svg class="icon" style="width:12px;height:12px"><use href="#i-external"/></svg></button>`;
+        return `<tr class="${failed ? 'row-failed' : ''}">
+          <td><div class="cell-title">${esc(notifRecipientName(n))}</div><div class="cell-sub">${fmtPhone(n.recipient_number)}</div></td>
+          <td>${notifTypeLabel(n)}</td>
+          <td>${esc(n.license_number || '—')}</td>
+          <td>${n.status === 'pending' ? 'Scheduled 9:00 AM' : fmtDateTime(n.sent_at || n.created_at)}</td>
+          <td>${notificationStatusChip(n.status)}</td>
+          <td>${action}</td>
+        </tr>`;
+      }).join('');
+    }
+    $('notif-showing').textContent = `Showing ${fmtNum(total ? start + 1 : 0)}–${fmtNum(Math.min(start + S.notifs.size, total))} of ${fmtNum(total)} notifications`;
+    renderPager('notif-pager', S.notifs.page, pages, 'changeNotifPage');
+  }
+
+  function changeNotifPage(page) {
+    const pages = Math.max(1, Math.ceil(notifFiltered().length / S.notifs.size));
+    S.notifs.page = Math.min(Math.max(1, page), pages);
+    renderNotifications();
+  }
+
+  function onNotifSearch() { debounce('notif', () => { S.notifs.page = 1; renderNotifications(); }, 200); }
+
+  function viewNotification(id) {
+    S.notifs.selected = (S.notifs.periodList || []).find(n => n.id === id) || null;
+    renderNotifDetail();
+    $('notif-detail').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function renderNotifDetail() {
+    const n = S.notifs.selected;
+    const card = $('notif-detail');
+    if (!n) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    $('detail-status').innerHTML = notificationStatusChip(n.status);
+    $('detail-title').textContent = `${notifRecipientName(n)} · ${notifTypeLabel(n)}`;
+    $('detail-meta').textContent = `Notification #NT-${String(n.id).padStart(4, '0')} / ${n.license_number || '—'}`;
+    if (n.status === 'failed') {
+      $('detail-left').innerHTML = `<div class="error-box"><strong>Message could not be delivered.</strong>${esc(n.error_message || 'WhatsApp reported a delivery failure for this recipient.')}<br><br>Confirm this number is registered with WhatsApp before retrying.</div>`;
+    } else if (n.status === 'pending') {
+      $('detail-left').innerHTML = `<div class="error-box" style="background:#F5F5F7;color:#52525B"><strong>Message is queued.</strong>It will be sent at the next daily check at 9:00 AM ${esc((S.settings && S.settings.timezone) || 'Asia/Kolkata')}.</div>`;
+    } else {
+      $('detail-left').innerHTML = `<div class="error-box" style="background:#F1FBF4;color:#15803D"><strong>Message delivered successfully.</strong>Sent to ${fmtPhone(n.recipient_number)} ${n.sent_at ? 'on ' + fmtDateTime(n.sent_at) : ''}.</div>`;
+    }
+    $('detail-retry').style.display = n.status === 'sent' ? 'none' : '';
+  }
+
+  function viewDetailCustomer() {
+    const n = S.notifs.selected;
+    if (n && n.customer_name) navigate('customers', { search: n.customer_name });
+  }
+
+  async function retryFromDetail() {
+    if (S.notifs.selected) await retryNotification(S.notifs.selected.id);
+  }
+
+  async function retryNotification(id) {
+    try {
+      showLoader(true);
+      const d = await api(`/notifications/${id}/retry`, { method: 'POST' });
+      if (d.success) toast('Notification retried successfully.', 'success');
+      else toast(`Retry failed: ${d.message || 'Unknown error'}`, 'error');
+      await loadNotifications();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      showLoader(false);
+    }
+  }
+
+  /* =========================================================
+     SETTINGS
+  ========================================================= */
+  function ensureSelectOption(id, value, label) {
+    const sel = $(id);
+    if (![...sel.options].some(o => o.value === value)) {
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = label;
+      sel.appendChild(opt);
+    }
+    sel.value = value;
+  }
+
+  function languageLabel(code) {
+    const map = { hi: 'Hindi (hi)', en: 'English (en)', mr: 'Marathi (mr)', gu: 'Gujarati (gu)' };
+    return map[code] || `${code}`;
+  }
+
+  async function loadSettings(quiet = false) {
+    try {
+      const [s, cust] = await Promise.all([api('/settings'), api('/customers?page_size=1')]);
+      S.settings = s;
+      S.previewCustomer = (cust.customers || [])[0] || null;
+      $('set-business').value = s.business_name || '';
+      $('set-owner').value = s.owner_whatsapp_number || 'Not configured';
+      $('set-sending').textContent = s.sending_number || 'Not configured';
+      const connected = $('set-connected');
+      if (s.demo_mode) {
+        connected.textContent = 'Demo mode';
+        connected.className = 'chip chip-amber';
+      } else if (s.whatsapp_connected) {
+        connected.textContent = 'Connected';
+        connected.className = 'chip chip-green';
+      } else {
+        connected.textContent = 'Not connected';
+        connected.className = 'chip chip-gray';
+      }
+      $('set-last-tested').textContent = localStorage.getItem('wa_last_tested') || 'Not tested yet';
+      const days = String(s.reminder_days_before || 2);
+      ensureSelectOption('set-days', days, `Exactly ${days} day${Number(days) === 1 ? '' : 's'} before expiry`);
+      ensureSelectOption('set-tz', s.timezone || 'Asia/Kolkata', `9:00 AM · ${s.timezone || 'Asia/Kolkata'}`);
+      $('set-scheduler').checked = !!s.scheduler_enabled;
+      $('set-demo').checked = !!s.demo_mode;
+      $('set-cust-template').value = s.customer_template_name || '';
+      $('set-client-template').value = s.client_template_name || '';
+      $('template-language').textContent = languageLabel(s.template_language_code || 'hi');
+      updateSidebarSettings(s);
+      if (!quiet) renderMessagePreview();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
+  async function saveSettings(silent = false) {
+    if (!S.settings) return;
+    const payload = {
+      reminder_days_before: Number($('set-days').value || 2),
+      timezone: $('set-tz').value || 'Asia/Kolkata',
+      scheduler_enabled: $('set-scheduler').checked,
+      demo_mode: $('set-demo').checked,
+      customer_template_name: $('set-cust-template').value.trim() || 'license_expiry_reminder',
+      client_template_name: $('set-client-template').value.trim() || 'license_expiry_client_notification',
+      template_language_code: S.settings.template_language_code || 'hi',
+    };
+    try {
+      showLoader(!silent);
+      await api('/settings', { method: 'PUT', body: JSON.stringify(payload) });
+      S.settings = { ...S.settings, ...payload };
+      updateSidebarSettings(S.settings);
+      if (!silent) {
+        toast('Settings saved.', 'success');
+        await loadSettings(true);
+      } else {
+        toast('Settings updated.', 'success');
+      }
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      showLoader(false);
+    }
+  }
+
+  async function testWhatsApp() {
+    try {
+      showLoader(true);
+      const d = await api('/test-whatsapp', { method: 'POST' });
+      if (d.success) {
+        toast(d.demo ? 'Demo mode: test message logged instead of sent.' : 'WhatsApp test message sent.', 'success');
+        const label = `Last tested ${fmtDateTime(new Date().toISOString())}`;
+        localStorage.setItem('wa_last_tested', label);
+        $('set-last-tested').textContent = label;
+      } else {
+        toast(`WhatsApp test failed: ${d.error || 'Unknown error'}`, 'error');
+      }
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      showLoader(false);
+    }
+  }
+
+  function renderMessagePreview() {
+    if (!S.settings) return;
+    const days = Number($('set-days').value || S.settings.reminder_days_before || 2);
+    const c = S.previewCustomer || {
+      name: 'Rahul Sharma',
+      mobile: '+91 98765 43210',
+      license_number: 'LIC-2026-1042',
+      expiry_date: addDays(todayDate(), days).toISOString().slice(0, 10),
+    };
+    const exp = fmtDate(c.expiry_date);
+    const license = c.license_number || 'N/A';
+    $('preview-customer').textContent =
+      `Namaste ${c.name},\n\n` +
+      `Aapka license number ${license}, ${exp} ko expire hone wala hai.\n\n` +
+      `Kripya samay par apna license renew karwa lein.\n\n` +
+      `Dhanyavaad.`;
+    $('preview-owner').textContent =
+      `License Expiry Reminder!\n\n` +
+      `Customer: ${c.name}\n` +
+      `Mobile: ${c.mobile}\n` +
+      `License Number: ${license}\n` +
+      `Expiry Date: ${exp}\n\n` +
+      `Customer ko WhatsApp reminder bhejne ki process initiate kar di gayi hai.`;
+    $('template-language').textContent = languageLabel(S.settings.template_language_code || 'hi');
+  }
+
+  /* =========================================================
+     INIT
+  ========================================================= */
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      $('global-search').focus();
+    }
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-backdrop.active').forEach(m => m.classList.remove('active'));
+    }
+  });
+
+  document.querySelectorAll('.modal-backdrop').forEach(bd => {
+    bd.addEventListener('click', e => { if (e.target === bd) bd.classList.remove('active'); });
+  });
+
+  // Live settings preview updates.
+  $('set-days').addEventListener('change', renderMessagePreview);
+  $('set-tz').addEventListener('change', renderMessagePreview);
+
+  loadSettings(true);
+  loadDashboard();
+</script>
+</body>
+</html>
