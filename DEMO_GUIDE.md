@@ -93,17 +93,25 @@ na kisi feature ko cover karta hai.
 - `View` se notification detail modal dikhao.
 
 ### 5. Import Excel
-- Page pe **Sample file** button click karo.
-- Sample CSV me 3 rows hain; ek row me mobile `9876` hai (invalid).
-- Upload karke columns map karo:
+- **Ready-made test file:** [`demo_students_import.xlsx`](https://poc-automation.onrender.com/demo_students_import.xlsx)
+  (repo me bhi hai). Download karke upload karo.
+- File me **6 rows** hain:
+  - 5 valid rows (Riya, Dev, Nikhil, Meera, Karan)
+  - 1 invalid mobile (`9876`, Sara Khan)
+  - 1 duplicate license (`LIC-2026-1005`, Karan Patel already exists)
+- Columns map karo:
   - Full Name => Customer name
   - WhatsApp No. => Mobile number
   - License ID => License number
   - Valid Till => Expiry date
-- Preview me **2 valid + 1 error** dikhega.
-- Import karne par 2 naye customers add honge (total 16).
-- Demo ke baad un 2 imported records ko delete kar sakte ho.
-- Apni Excel `.xlsx` file bhi upload kar sakte ho.
+- Preview me **5 valid + 1 error** dikhega.
+- `Skip duplicate records` ON rakhna. Import result:
+  - **Imported: 4**
+  - **Skipped: 1** (duplicate Karan Patel)
+  - **Errors: 1** (invalid mobile)
+  - Total customers: **18**
+- Import ke baad 4 naye students ko delete kar sakte ho.
+- Page ka built-in **Sample file** button bhi CSV validation demo ke liye use kar sakte ho.
 
 ### 6. Settings
 - **Demo mode ON** hai => koi real WhatsApp message nahi jata.

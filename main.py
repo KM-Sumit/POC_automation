@@ -154,6 +154,21 @@ async def serve_frontend():
     return FileResponse(index_path)
 
 
+@app.get("/demo_students_import.xlsx", response_class=FileResponse)
+async def serve_demo_excel():
+    """Download the ready-made Excel file for testing the import flow."""
+    file_path = BASE_DIR / "demo_students_import.xlsx"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Demo Excel file not found")
+    return FileResponse(
+        file_path,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ),
+        filename="demo_students_import.xlsx",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Dashboard
 # ---------------------------------------------------------------------------
