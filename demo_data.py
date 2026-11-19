@@ -22,6 +22,16 @@ DEMO_STUDENTS = [
     ("Kavya Menon", "+91 90000 12345", "LIC-2026-1012", 30, "M.Tech · Wolfram Mathematica", -365),
     ("Aditya Rao", "+91 98330 66778", "LIC-2026-1013", 60, "B.Tech ECE · OriginPro", -365),
     ("Pooja Desai", "+91 96500 33445", "LIC-2026-1014", 120, "MBA · Microsoft 365", -365),
+    ("Aisha Khan", "+91 98765 10015", "LIC-2026-1015", 4, "B.Pharm · SPSS", -365),
+    ("Rakesh Yadav", "+91 98765 10016", "", 6, "", -365),
+    ("Simran Kaur", "+91 98765 10017", "LIC-2026-1017", 8, "B.Tech IT · Microsoft 365", -365),
+    ("Divya Nair", "+91 98765 10018", "LIC-2026-1018", 12, "M.Sc · OriginPro", -365),
+    ("Yash Thakur", "+91 98765 10019", "", 18, "B.Des · Adobe Creative Cloud", -365),
+    ("Farhan Ali", "+91 98765 10020", "LIC-2026-1020", 20, "B.Arch · SketchUp Pro", -365),
+    ("Harsh Vardhan", "+91 98765 10021", "LIC-2026-1021", 45, "B.Tech ECE · MATLAB", -365),
+    ("Tanya Bhatia", "+91 98765 10022", "", -1, "BBA · QuickBooks", -370),
+    ("Sameer Khan", "+91 98765 10023", "LIC-2026-1023", -30, "B.Sc · Wolfram Mathematica", -400),
+    ("Nisha Patel", "+91 98765 10024", "LIC-2026-1024", 90, "MBA · Zoho One", -365),
 ]
 
 DEMO_CLIENT_NUMBER = "919999999999"

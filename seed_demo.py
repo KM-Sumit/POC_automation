@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Seed 14 demo students for a complete feature walkthrough.
+Seed 24 demo students for a complete feature walkthrough.
 
 Usage:
     python seed_demo.py https://poc-automation.onrender.com
@@ -8,11 +8,11 @@ Usage:
     python seed_demo.py http://127.0.0.1:8000
 
 The data intentionally covers:
-  - 2 expired, 1 expiring today, 4 inside the 2-day reminder window
-  - 3 students without a license number (optional field)
-  - 3 students without additional details (optional field)
+  - 4 expired, 1 expiring today, 4 inside the 2-day reminder window
+  - 6 students without a license number (optional field)
+  - 4 students without additional details (optional field)
   - 1 student without license issue date
-  - 14 records => 3 pages, plus every status tab and search
+  - 24 records => 5 pages, plus every status tab and search
   - 2 students expiring in 2 days => 4 WhatsApp notifications
 
 --mixed-notifications keeps one owner notification failed so the Retry

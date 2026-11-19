@@ -1,4 +1,4 @@
-# 14 Students Demo Guide
+# 24 Students Demo Guide
 
 Live app: https://poc-automation.onrender.com
 
@@ -9,11 +9,11 @@ na kisi feature ko cover karta hai.
 
 | Metric | Value |
 |---|---|
-| Total students | 14 |
-| Active licenses (expiry today ya future) | 12 |
+| Total students | 24 |
+| Active licenses (expiry today ya future) | 20 |
 | Expiring in next 2 days | 4 |
-| Expired | 2 |
-| Customers pages (5 per page) | 3 |
+| Expired | 4 |
+| Customers pages (5 per page) | 5 |
 | Notifications | 4 (3 sent + 1 failed for Retry demo) |
 
 ## Student list
@@ -34,34 +34,46 @@ na kisi feature ko cover karta hai.
 | 12 | Kavya Menon | +30 days | +30 | LIC-2026-1012 | M.Tech · Wolfram Mathematica | Expiring soon tab |
 | 13 | Aditya Rao | +60 days | +60 | LIC-2026-1013 | B.Tech ECE · OriginPro | Active tab |
 | 14 | Pooja Desai | +120 days | +120 | LIC-2026-1014 | MBA · Microsoft 365 | Active tab |
+| 15 | Aisha Khan | 23 Nov 2026 | +4 | LIC-2026-1015 | B.Pharm · SPSS | 7-day range |
+| 16 | Rakesh Yadav | 25 Nov 2026 | +6 | — | — | Blank license + blank details |
+| 17 | Simran Kaur | 27 Nov 2026 | +8 | LIC-2026-1017 | B.Tech IT · Microsoft 365 | 30-day list |
+| 18 | Divya Nair | 01 Dec 2026 | +12 | LIC-2026-1018 | M.Sc · OriginPro | 30-day list |
+| 19 | Yash Thakur | 07 Dec 2026 | +18 | — | B.Des · Adobe Creative Cloud | Blank license |
+| 20 | Farhan Ali | 09 Dec 2026 | +20 | LIC-2026-1020 | B.Arch · SketchUp Pro | 30-day list |
+| 21 | Harsh Vardhan | 03 Jan 2027 | +45 | LIC-2026-1021 | B.Tech ECE · MATLAB | Active tab |
+| 22 | Tanya Bhatia | 18 Nov 2026 | -1 | — | BBA · QuickBooks | Expired yesterday |
+| 23 | Sameer Khan | 20 Oct 2026 | -30 | LIC-2026-1023 | B.Sc · Wolfram Mathematica | Expired 30 days ago |
+| 24 | Nisha Patel | 17 Feb 2027 | +90 | LIC-2026-1024 | MBA · Zoho One | Active tab |
 
 ## Feature-by-feature demo
 
 ### 1. Dashboard
-- Total customers: **14**
-- Active licenses: **12**
+- Total customers: **24**
+- Active licenses: **20**
 - Upcoming expiries: **4** (Rohan today, Priya tomorrow, Karan + Ananya in 2 days)
-- Expired licenses: **2**
+- Expired licenses: **4** (Aarav, Sameer, Ishita, Tanya)
 - Notification cards: **3 sent, 1 failed**
 - Recent notifications aur expiring-soon list dikhao.
 
 ### 2. Customers
-- **Pagination:** 14 records, 5 per page => 3 pages. Page 2/3 pe jao.
+- **Pagination:** 24 records, 5 per page => 5 pages.
 - **Tabs:**
-  - All customers: 14
-  - Active: 2 (Aditya, Pooja)
-  - Expiring soon: 10
-  - Expired: 2 (Aarav, Ishita)
+  - All customers: 24
+  - Active: 4 (Harsh, Aditya, Nisha, Pooja)
+  - Expiring soon: 16
+  - Expired: 4 (Aarav, Sameer, Ishita, Tanya)
 - **Search:**
-  - `Ishita` => blank license wala student
+  - `Tanya` => kal expire hua student
+  - `Sameer` => 30 din pehle expire hua student
+  - `Yash` => blank license wala student
+  - `Nisha` => 90-day active license
   - `98111` => Ananya (mobile search)
   - `LIC-2026-1010` => Sneha
-  - `Mohit` => blank issue date + blank details
 - **License filter (page 1):**
-  - `Without license number` => Ishita, Rohan, Priya
+  - `Without license number` => Ishita, Tanya, Rohan
   - `With license number` => baaki page-1 records
-- **Sort:** Latest, Expiry, Name.
-- **Add customer (optional fields):** form me sirf Name, Mobile, Expiry bharo;
+- **Sort:** Latest (naye 10 students pehle), Expiry, Name.
+- **Add customer (optional fields):** sirf Name, Mobile, Expiry bharo;
   License number aur Additional details blank chhod do => record save hota hai.
 - **Edit:** Mohit Kumar kholo => License issue date aur Additional details blank
   hain, phir bhi record valid hai.
@@ -73,8 +85,8 @@ na kisi feature ko cover karta hai.
   - Expiring tomorrow: **1** (Priya)
   - Expiring in 2 days: **2** (Karan, Ananya)
   - Total list: **4** (Rohan, Priya, Karan, Ananya)
-- Top-right date range button click karo => **7-day** range, total **7**
-  (Vikram, Neha, Arjun add ho jate hain).
+- Top-right date range button click karo => **7-day** range, total **9**
+  (Vikram, Aisha, Neha, Rakesh, Arjun add ho jate hain).
 - **Reminder filter:** All / Sent / Failed / Scheduled.
 - **Export list** button => CSV download.
 - Search: `Ananya` ya `LIC-2026-1005`.
@@ -109,7 +121,7 @@ na kisi feature ko cover karta hai.
   - **Imported: 4**
   - **Skipped: 1** (duplicate Karan Patel)
   - **Errors: 1** (invalid mobile)
-  - Total customers: **18**
+  - Total customers: **28**
 - Import ke baad 4 naye students ko delete kar sakte ho.
 - Page ka built-in **Sample file** button bhi CSV validation demo ke liye use kar sakte ho.
 
@@ -122,19 +134,19 @@ na kisi feature ko cover karta hai.
 
 ## 5-minute demo flow (recommended)
 
-1. **Dashboard** — 14 total, 4 upcoming, 2 expired.
-2. **Customers** — 3 pages, Expiring soon tab, search `Ishita`, filter
+1. **Dashboard** — 24 total, 4 upcoming, 4 expired.
+2. **Customers** — 5 pages, Expiring soon tab, search `Tanya`, filter
    `Without license number`, ek naya student bina license/details ke add karo
    aur delete karo.
 3. **Upcoming Expiries** — 2-day se 7-day range toggle, export CSV.
 4. **Notifications** — failed notification Retry karke sent dikhao.
-5. **Import Excel** — sample file upload, validation error + import preview.
+5. **Import Excel** — ready-made Excel upload, validation error + import preview.
 6. **Settings** — test message, reminder days 2 => 3, message preview.
 
 ## Important notes
 
 - **Auto-seed:** App startup par khud demo data bana deta hai. Agar database
-  empty ho aur Demo mode ON ho, to 14 students + 3 sent/1 failed notifications
+  empty ho aur Demo mode ON ho, to 24 students + 3 sent/1 failed notifications
   automatically wapas aa jate hain. Render restart ya naye deploy ke baad bhi
   data zero nahi rahega.
 - Manual seed ki zarurat sirf tab hai jab database me kuch customers pehle se
