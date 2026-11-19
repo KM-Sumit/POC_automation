@@ -36,18 +36,18 @@ MIXED_NOTIFICATIONS = "--mixed-notifications" in FLAGS
 # name, mobile, license number, expiry offset (days), notes, issue offset
 STUDENTS = [
     ("Aarav Sharma", "+91 98765 10001", "LIC-2025-1001", -45, "B.Tech CSE · Microsoft 365", -410),
-    ("Ishita Verma", "098765 10002", "", -7, "B.Des · Adobe Creative Cloud", -372),
-    ("Rohan Mehta", "9876510003", "", 0, "BBA · TallyPrime", -365),
-    ("Priya Nair", "+919876510004", "", 1, "B.Sc IT · MATLAB", -365),
-    ("Karan Patel", "98765-10005", "LIC-2026-1005", 2, "", -365),
+    ("Ishita Verma", "+91 98765 10002", "", -7, "B.Des · Adobe Creative Cloud", -372),
+    ("Rohan Mehta", "+91 98765 10003", "", 0, "BBA · TallyPrime", -365),
+    ("Priya Nair", "+91 98765 10004", "", 1, "B.Sc IT · MATLAB", -365),
+    ("Karan Patel", "+91 98765 10005", "LIC-2026-1005", 2, "", -365),
     ("Ananya Iyer", "+91 98111 22334", "LIC-2026-1006", 2, "MCA · Zoho One", -365),
-    ("Vikram Singh", "098990 11223", "LIC-2026-1007", 3, "B.Tech Civil · Autodesk Fusion 360", -365),
+    ("Vikram Singh", "+91 98990 11223", "LIC-2026-1007", 3, "B.Tech Civil · Autodesk Fusion 360", -365),
     ("Neha Gupta", "+91 97654 33221", "LIC-2026-1008", 5, "M.Com · QuickBooks", -365),
-    ("Arjun Reddy", "98450 77889", "LIC-2026-1009", 7, "B.Sc Statistics · SPSS", -365),
+    ("Arjun Reddy", "+91 98450 77889", "LIC-2026-1009", 7, "B.Sc Statistics · SPSS", -365),
     ("Sneha Joshi", "+91 99250 44556", "LIC-2026-1010", 10, "", -365),
-    ("Mohit Kumar", "97170 88990", "LIC-2026-1011", 15, "", None),
+    ("Mohit Kumar", "+91 97170 88990", "LIC-2026-1011", 15, "", None),
     ("Kavya Menon", "+91 90000 12345", "LIC-2026-1012", 30, "M.Tech · Wolfram Mathematica", -365),
-    ("Aditya Rao", "98330 66778", "LIC-2026-1013", 60, "B.Tech ECE · OriginPro", -365),
+    ("Aditya Rao", "+91 98330 66778", "LIC-2026-1013", 60, "B.Tech ECE · OriginPro", -365),
     ("Pooja Desai", "+91 96500 33445", "LIC-2026-1014", 120, "MBA · Microsoft 365", -365),
 ]
 
@@ -115,6 +115,7 @@ def print_notification_state():
 
 def main():
     today = date.today()
+    mixed_notifications = MIXED_NOTIFICATIONS
     existing = {
         (customer["name"], normalize_mobile(customer["mobile"]))
         for customer in request("/api/customers?page_size=1000").get("customers", [])
@@ -165,16 +166,16 @@ def main():
         f"{missing_notes} without additional details"
     )
 
-    if MIXED_NOTIFICATIONS:
+    if mixed_notifications:
         settings = request("/api/settings")
         if settings.get("whatsapp_connected"):
             print(
                 "\nReal WhatsApp credentials detected. Skipping failure simulation "
                 "so no live messages are sent."
             )
-            MIXED_NOTIFICATIONS = False
+            mixed_notifications = False
 
-    if MIXED_NOTIFICATIONS:
+    if mixed_notifications:
         print("\nPreparing mixed notifications (sent + failed) for the Retry demo...")
         set_demo_mode(False)
         request("/api/trigger-check", "POST")
