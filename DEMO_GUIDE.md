@@ -125,9 +125,12 @@ na kisi feature ko cover karta hai.
 
 ## Important notes
 
-- Render free tier ka SQLite **ephemeral** hai. Service restart ya naye deploy
-  par data reset ho jata hai. Demo se pehle site kholo aur zarurat pade to
-  dobara seed karo:
+- **Auto-seed:** App startup par khud demo data bana deta hai. Agar database
+  empty ho aur Demo mode ON ho, to 14 students + 3 sent/1 failed notifications
+  automatically wapas aa jate hain. Render restart ya naye deploy ke baad bhi
+  data zero nahi rahega.
+- Manual seed ki zarurat sirf tab hai jab database me kuch customers pehle se
+  hain aur aap clean demo state chahte ho:
 
   ```bash
   python3 seed_demo.py https://poc-automation.onrender.com --mixed-notifications

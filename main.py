@@ -115,11 +115,17 @@ class SettingsUpdate(BaseModel):
 @app.on_event("startup")
 async def startup():
     await init_db()
-    # Read timezone from DB settings
+    # Read timezone from DB settings and rebuild demo data when the
+    # ephemeral SQLite database is empty (e.g. after a Render restart).
     from database import AsyncSessionLocal
+    from demo_data import seed_demo_if_empty
+
     async with AsyncSessionLocal() as session:
         result = await session.execute(select(AppSettings))
         settings = result.scalars().first()
+        seeded = await seed_demo_if_empty(session, settings)
+        if seeded:
+            logger.info(f"Demo data ready: {seeded} students seeded.")
         tz = settings.timezone if settings else "Asia/Kolkata"
     start_scheduler(timezone=tz)
     logger.info("Application started.")
