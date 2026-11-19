@@ -72,7 +72,8 @@ na kisi feature ko cover karta hai.
 - **License filter (page 1):**
   - `Without license number` => Ishita, Tanya, Rohan
   - `With license number` => baaki page-1 records
-- **Sort:** Latest (naye 10 students pehle), Expiry, Name.
+- **Sort:** Latest, Expiry, Name (sort current page ke andar apply hota hai;
+  naye students ko search se dhoondo, jaise `Nisha`, `Tanya`, `Aisha`).
 - **Add customer (optional fields):** sirf Name, Mobile, Expiry bharo;
   License number aur Additional details blank chhod do => record save hota hai.
 - **Edit:** Mohit Kumar kholo => License issue date aur Additional details blank
